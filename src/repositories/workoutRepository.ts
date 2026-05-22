@@ -34,8 +34,6 @@ const readAll = () => ({
   personalRecords: databaseClient.read<PersonalRecord[]>("personal_records", []),
 });
 
-const isRemoteUser = (userId: string) => Boolean(supabase && !userId.startsWith("dev-"));
-
 type PlanRow = {
   id: string;
   user_id: string;
@@ -164,7 +162,7 @@ const initialSnapshot = (userId: string): AppSnapshot => {
 
 export const workoutRepository = {
   async loadSnapshot(userId: string): Promise<AppSnapshot> {
-    if (isRemoteUser(userId) && supabase) {
+    if (supabase) {
       const client = supabase;
       const [plans, sessions, personalRecords] = await Promise.all([
         client.from("workout_plans").select("*").eq("user_id", userId).order("updated_at", { ascending: false }),
@@ -198,7 +196,7 @@ export const workoutRepository = {
     return seeded;
   },
   async saveSnapshot(userId: string, snapshot: AppSnapshot) {
-    if (isRemoteUser(userId) && supabase) {
+    if (supabase) {
       const client = supabase;
       const current = await Promise.all([
         client.from("workout_plans").select("id").eq("user_id", userId),

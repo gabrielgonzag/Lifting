@@ -1,56 +1,15 @@
 import { userRepository } from "../repositories/userRepository";
-import type { AuthResult, LoginInput, RegisterInput, User, UserRole } from "../types";
+import type { AuthResult, LoginInput, RegisterInput, User } from "../types";
 import { makeId } from "../utils/id";
 import { hasSupabaseConfig, supabase } from "./databaseClient";
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-const developerUsers = [
-  {
-    id: "dev-casual",
-    name: "Dev Casual",
-    email: "dev.casual@lifting.local",
-    password: "lifting-dev",
-    role: "casual",
-    plan: "free",
-  },
-  {
-    id: "dev-professional",
-    name: "Dev Profissional",
-    email: "dev.profissional@lifting.local",
-    password: "lifting-dev",
-    role: "professional",
-    plan: "professional",
-  },
-  {
-    id: "dev-admin",
-    name: "Dev Admin",
-    email: "dev.admin@lifting.local",
-    password: "lifting-dev",
-    role: "admin",
-    plan: "enterprise",
-  },
-] satisfies Array<Pick<User, "id" | "name" | "email" | "role" | "plan"> & { password: string }>;
-
-const ensureDeveloperUsers = () => {
-  const timestamp = new Date().toISOString();
-  userRepository.ensure(
-    developerUsers.map((user) => ({
-      ...user,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })),
-  );
-};
-
 export const authService = {
   async currentUser() {
-    ensureDeveloperUsers();
     if (supabase) {
       const { data } = await supabase.auth.getSession();
-      return data.session?.user
-        ? userRepository.getSupabaseProfile(data.session.user.id)
-        : userRepository.getSessionUser();
+      return data.session?.user ? userRepository.getSupabaseProfile(data.session.user.id) : undefined;
     }
     return userRepository.getSessionUser();
   },
@@ -76,14 +35,6 @@ export const authService = {
     if (asProfessional && stored.role !== "professional" && stored.role !== "admin") {
       return { ok: false, message: "Essa conta nao possui perfil profissional." };
     }
-    userRepository.setSessionUserId(stored.id);
-    return { ok: true, user: userRepository.toPublicUser(stored) };
-  },
-  async loginAsDeveloper(role: UserRole): Promise<AuthResult> {
-    ensureDeveloperUsers();
-    const account = developerUsers.find((user) => user.role === role);
-    const stored = account ? userRepository.findByEmail(account.email) : undefined;
-    if (!stored) return { ok: false, message: "Login de desenvolvimento indisponivel." };
     userRepository.setSessionUserId(stored.id);
     return { ok: true, user: userRepository.toPublicUser(stored) };
   },

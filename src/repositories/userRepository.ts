@@ -44,12 +44,6 @@ export const userRepository = {
     saveUsers([...users(), { ...user, password }]);
     return user;
   },
-  ensure(items: StoredUser[]) {
-    const current = users();
-    const knownEmails = new Set(current.map((user) => user.email.toLowerCase()));
-    const missing = items.filter((user) => !knownEmails.has(user.email.toLowerCase()));
-    if (missing.length) saveUsers([...current, ...missing]);
-  },
   update(id: string, profile: Partial<Pick<User, "name" | "avatarUrl" | "plan" | "role">>) {
     let updated: User | undefined;
     saveUsers(

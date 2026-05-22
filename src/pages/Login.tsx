@@ -14,7 +14,6 @@ export default function Login({
   routeForUser: (user: User) => AppRoute;
 }) {
   const login = useAuthStore((state) => state.login);
-  const loginAsDeveloper = useAuthStore((state) => state.loginAsDeveloper);
   const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,15 +25,6 @@ export default function Login({
     const result = await login({ email, password, asProfessional });
     if (!result.ok || !result.user) {
       setMessage(result.message ?? "Nao foi possivel entrar.");
-      return;
-    }
-    onNavigate(routeForUser(result.user));
-  };
-
-  const enterDeveloperMode = async (role: User["role"]) => {
-    const result = await loginAsDeveloper(role);
-    if (!result.ok || !result.user) {
-      setMessage(result.message ?? "Login de desenvolvimento indisponivel.");
       return;
     }
     onNavigate(routeForUser(result.user));
@@ -102,20 +92,6 @@ export default function Login({
           Criar conta
         </button>
       </div>
-      <section className="mt-6 border-t border-white/10 pt-5">
-        <p className="text-xs font-semibold uppercase text-zinc-500">Acessos de desenvolvimento</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-          <Button onClick={() => enterDeveloperMode("casual")} variant="secondary">
-            Casual
-          </Button>
-          <Button onClick={() => enterDeveloperMode("professional")} variant="secondary">
-            Profissional
-          </Button>
-          <Button onClick={() => enterDeveloperMode("admin")} variant="secondary">
-            Admin
-          </Button>
-        </div>
-      </section>
     </AuthFrame>
   );
 }

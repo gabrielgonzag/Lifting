@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
-import type { LoginInput, RegisterInput, User, UserRole } from "../types";
+import type { LoginInput, RegisterInput, User } from "../types";
 
 type AuthState = {
   user?: User;
@@ -9,7 +9,6 @@ type AuthState = {
   isLoading: boolean;
   hydrate: () => void;
   login: (input: LoginInput) => ReturnType<typeof authService.login>;
-  loginAsDeveloper: (role: UserRole) => ReturnType<typeof authService.loginAsDeveloper>;
   register: (input: RegisterInput) => ReturnType<typeof authService.register>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => ReturnType<typeof authService.resetPassword>;
@@ -28,16 +27,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   login: async (input) => {
     set({ isLoading: true });
     const result = await authService.login(input);
-    set({
-      user: result.user,
-      isAuthenticated: Boolean(result.user),
-      isLoading: false,
-    });
-    return result;
-  },
-  loginAsDeveloper: async (role) => {
-    set({ isLoading: true });
-    const result = await authService.loginAsDeveloper(role);
     set({
       user: result.user,
       isAuthenticated: Boolean(result.user),
