@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Chrome } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -14,6 +14,7 @@ export default function Register({
   routeForUser: (user: User) => AppRoute;
 }) {
   const register = useAuthStore((state) => state.register);
+  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const isLoading = useAuthStore((state) => state.isLoading);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,12 +52,28 @@ export default function Register({
     onNavigate(routeForUser(result.user));
   };
 
+  const submitGoogle = async () => {
+    const result = await loginWithGoogle();
+    if (!result.ok) {
+      setMessage(result.message ?? "Nao foi possivel continuar com Google.");
+    }
+  };
+
   return (
     <AuthFrame
       copy="Crie seu perfil para manter fichas, historico e recordes prontos para uma futura sincronizacao."
       eyebrow="Onboarding"
       title="Criar conta"
     >
+      <Button className="w-full" disabled={isLoading} onClick={submitGoogle} type="button" variant="secondary">
+        <Chrome size={18} />
+        Continuar com Google
+      </Button>
+      <div className="my-5 flex items-center gap-3 text-xs uppercase text-zinc-500">
+        <span className="h-px flex-1 bg-white/10" />
+        ou crie com email
+        <span className="h-px flex-1 bg-white/10" />
+      </div>
       <form className="grid gap-3" onSubmit={submit}>
         <label className="grid gap-2 text-sm">
           Nome
