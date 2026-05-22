@@ -1,8 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { lazy, Suspense, useState } from "react";
-import type { CSSProperties } from "react";
 import { AppShell } from "./components/layout/AppShell";
-import { useAppStore } from "./store/useAppStore";
 import type { AppView } from "./types";
 
 const Home = lazy(() => import("./pages/Home"));
@@ -13,8 +11,6 @@ const Workout = lazy(() => import("./pages/Workout"));
 
 export default function App() {
   const [view, setView] = useState<AppView>("home");
-  const density = useAppStore((state) => state.preferences.density);
-  const accent = useAppStore((state) => state.preferences.accent);
   const page = {
     home: <Home onNavigate={setView} />,
     plans: <Plans />,
@@ -24,7 +20,7 @@ export default function App() {
   }[view];
 
   return (
-    <div className={density === "compact" ? "text-sm" : undefined} style={{ "--accent": accent } as CSSProperties}>
+    <div>
       <AppShell activeView={view} onNavigate={setView}>
         <AnimatePresence mode="wait">
           <motion.div

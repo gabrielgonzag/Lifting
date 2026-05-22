@@ -18,7 +18,7 @@ export type WorkoutSet = {
   rpe?: number;
   rest?: number;
   notes?: string;
-  isPersonalRecord?: boolean;
+  completed?: boolean;
 };
 
 export type WorkoutExercise = {
@@ -37,7 +37,6 @@ export type WorkoutSession = {
 
 export type WorkoutBlock = {
   id: string;
-  title: string;
   color: string;
   exerciseIds: string[];
 };
@@ -47,17 +46,23 @@ export type WorkoutPlan = {
   title: string;
   description: string;
   color: string;
-  icon: string;
   muscleGroups: string[];
   blocks: WorkoutBlock[];
   createdAt: string;
   updatedAt: string;
 };
 
-export type ThemePreferences = {
-  accent: string;
-  density: "comfortable" | "compact";
-  theme: "dark";
+export type PersonalRecordType = "absolute_weight" | "estimated_1rm" | "set_volume";
+
+export type PersonalRecord = {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  type: PersonalRecordType;
+  value: number;
+  weight: number;
+  reps: number;
+  date: string;
 };
 
 export type AppView = "home" | "plans" | "workout" | "progress" | "settings";
@@ -65,6 +70,5 @@ export type AppView = "home" | "plans" | "workout" | "progress" | "settings";
 export type AppSnapshot = {
   plans: WorkoutPlan[];
   sessions: WorkoutSession[];
-  favoriteExerciseIds: string[];
-  preferences: ThemePreferences;
+  personalRecords: PersonalRecord[];
 };

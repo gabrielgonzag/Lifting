@@ -27,12 +27,13 @@ npm run build
 
 ## Fluxos implementados
 
-- Home com resumo semanal, ultimo treino e atalhos.
+- Home limpa com fichas, ultimo treino e atalhos de treino.
 - Fichas com busca, filtro, ordenacao, criacao, edicao, duplicacao e exclusao.
-- Editor de ficha com cor, icone, descricao, bloco personalizado, biblioteca filtravel, favoritos e reordenacao por drag and drop.
-- Tela de treino com series, carga, repeticoes, RPE, descanso, observacoes, timer e recordes automaticos.
-- Progresso com graficos de carga, volume, frequencia, recordes e exercicios mais treinados.
-- Configuracoes com cor de destaque, densidade, exportacao/importacao JSON e restauracao dos dados locais.
+- Editor de ficha com grupos musculares selecionaveis, secoes colapsaveis e reordenacao por drag and drop.
+- Tela de treino com series rapidas, inputs numericos vazios, steppers, RPE, descanso, timer e feedback de serie salva.
+- PRs de carga, 1RM estimado por Epley e volume por serie.
+- Progresso com curva principal de forca, frequencia semanal e insights resumidos.
+- Backup com exportacao PDF, exportacao/importacao JSON e reset com confirmacao.
 
 ## Estrutura
 
@@ -49,4 +50,4 @@ src/
   utils/
 ```
 
-O banco interno de exercicios fica centralizado em `src/data/exercises.ts`. A persistencia inicial mora em `src/store/useAppStore.ts`, pronta para ser trocada futuramente por uma camada de sincronizacao remota.
+O banco interno de exercicios fica centralizado em `src/data/exercises.ts`. A persistencia separa fichas, sessoes e PRs em chaves locais dedicadas antes de uma futura camada de sincronizacao remota.

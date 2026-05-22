@@ -14,7 +14,7 @@ const navItems: Array<{ view: AppView; label: string; icon: typeof Home }> = [
   { view: "plans", label: "Fichas", icon: NotebookPen },
   { view: "workout", label: "Treino", icon: Dumbbell },
   { view: "progress", label: "Progresso", icon: BarChart3 },
-  { view: "settings", label: "Ajustes", icon: Settings2 },
+  { view: "settings", label: "Backup", icon: Settings2 },
 ];
 
 export function AppShell({
@@ -49,9 +49,7 @@ export function AppShell({
             </button>
           ))}
         </nav>
-        <div className="mt-auto rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-zinc-300">
-          Seus dados ficam no navegador ate a sincronizacao em nuvem chegar.
-        </div>
+        <p className="mt-auto px-3 text-sm text-zinc-500">Fichas e treinos salvos no navegador.</p>
       </aside>
       <main className="min-w-0 flex-1 px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-8">{children}</main>
       <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-lg border border-white/10 bg-panel/95 p-1 shadow-lift backdrop-blur lg:hidden">

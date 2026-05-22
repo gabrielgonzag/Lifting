@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --accent: #b7f34d;
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,6 +31,11 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 #root {

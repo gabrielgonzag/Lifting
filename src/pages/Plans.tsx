@@ -74,8 +74,7 @@ export default function Plans() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="mb-3 h-2 w-24 rounded-full" style={{ background: plan.color }} />
-                  <p className="text-xs font-semibold uppercase text-zinc-400">{plan.icon}</p>
-                  <h3 className="mt-1 text-2xl font-semibold">{plan.title}</h3>
+                  <h3 className="text-2xl font-semibold">{plan.title}</h3>
                   <p className="mt-2 text-sm text-zinc-400">{plan.description || "Sem descricao."}</p>
                 </div>
                 <div className="flex gap-1">
@@ -95,16 +94,6 @@ export default function Plans() {
                   <Badge key={item}>{item}</Badge>
                 ))}
                 <Badge>{plan.blocks.flatMap((block) => block.exerciseIds).length} exercicios</Badge>
-              </div>
-              <div className="mt-4 grid gap-2">
-                {plan.blocks.map((block) => (
-                  <div className="rounded-md bg-white/5 p-3" key={block.id}>
-                    <div className="flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-sm" style={{ background: block.color }} />
-                      <p className="font-medium">{block.title}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </Card>
           ))}

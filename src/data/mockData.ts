@@ -13,12 +13,10 @@ export const starterPlans: WorkoutPlan[] = [
     title: "Push controlado",
     description: "Peito, ombro e triceps com progressao de carga.",
     color: "#FF6B57",
-    icon: "flame",
     muscleGroups: ["Peito", "Ombro", "Triceps"],
     blocks: [
       {
         id: "block-push-main",
-        title: "Forca superior",
         color: "#FF6B57",
         exerciseIds: [
           "peito-1-supino-reto-com-barra",
@@ -35,12 +33,10 @@ export const starterPlans: WorkoutPlan[] = [
     title: "Lower build",
     description: "Quadriceps, posterior e gluteo em blocos densos.",
     color: "#B7F34D",
-    icon: "mountain",
     muscleGroups: ["Quadriceps", "Posterior de coxa", "Gluteo"],
     blocks: [
       {
         id: "block-lower-main",
-        title: "Membros inferiores",
         color: "#B7F34D",
         exerciseIds: [
           "quadriceps-1-agachamento-livre",
@@ -66,7 +62,7 @@ export const starterSessions: WorkoutSession[] = [
         exerciseId: "peito-1-supino-reto-com-barra",
         sets: [
           { id: "bench-a-1", weight: 70, reps: 8, rpe: 8, rest: 120 },
-          { id: "bench-a-2", weight: 72.5, reps: 6, rpe: 9, rest: 150, isPersonalRecord: true },
+          { id: "bench-a-2", weight: 72.5, reps: 6, rpe: 9, rest: 150, completed: true },
         ],
       },
       {
@@ -86,7 +82,7 @@ export const starterSessions: WorkoutSession[] = [
         exerciseId: "quadriceps-1-agachamento-livre",
         sets: [
           { id: "squat-a-1", weight: 95, reps: 6, rpe: 8, rest: 150 },
-          { id: "squat-a-2", weight: 100, reps: 5, rpe: 9, rest: 180, isPersonalRecord: true },
+          { id: "squat-a-2", weight: 100, reps: 5, rpe: 9, rest: 180, completed: true },
         ],
       },
       {

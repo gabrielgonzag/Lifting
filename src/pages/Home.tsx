@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarDays, Dumbbell, NotebookPen, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, Dumbbell, NotebookPen, Plus } from "lucide-react";
 import hero from "../assets/gym-notebook-hero.png";
 import { SectionTitle } from "../components/common/SectionTitle";
 import { Badge } from "../components/ui/badge";
@@ -9,7 +8,7 @@ import { Card } from "../components/ui/card";
 import { exercises } from "../data/exercises";
 import { useAppStore } from "../store/useAppStore";
 import type { AppView } from "../types";
-import { formatLongDate, inCurrentWeek, sessionVolume } from "../utils/format";
+import { formatLongDate, inCurrentWeek } from "../utils/format";
 
 export default function Home({ onNavigate }: { onNavigate: (view: AppView) => void }) {
   const plans = useAppStore((state) => state.plans);
@@ -17,20 +16,19 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
   const weeklySessions = sessions.filter((session) => inCurrentWeek(session.date));
   const lastSession = sessions[0];
   const lastPlan = plans.find((plan) => plan.id === lastSession?.workoutPlanId);
-  const weeklyVolume = weeklySessions.reduce((total, session) => total + sessionVolume(session), 0);
 
   return (
     <div className="grid gap-6">
       <motion.section
         animate={{ opacity: 1, y: 0 }}
-        className="relative min-h-[25rem] overflow-hidden rounded-lg border border-white/10"
+        className="relative min-h-[21rem] overflow-hidden rounded-lg border border-white/10"
         initial={{ opacity: 0, y: 14 }}
       >
         <img alt="Equipamentos e bloco de treino em academia" className="absolute inset-0 h-full w-full object-cover" src={hero} />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,24,24,.94),rgba(24,24,24,.58),rgba(24,24,24,.24))]" />
-        <div className="relative flex min-h-[25rem] max-w-2xl flex-col justify-end p-5 sm:p-8">
+        <div className="relative flex min-h-[21rem] max-w-2xl flex-col justify-end p-5 sm:p-8">
           <Badge className="w-fit border-lime/30 bg-lime/15 text-lime">CONTENT.ENV</Badge>
-          <h2 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">Seu treino em modo notebook.</h2>
+          <h2 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">Escolha a ficha e treine.</h2>
           <p className="mt-3 max-w-xl text-zinc-200">
             Monte fichas, grave series e acompanhe a carga sem sair do fluxo da academia.
           </p>
@@ -46,26 +44,37 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
           </div>
         </div>
       </motion.section>
-      <section className="grid gap-3 md:grid-cols-3">
-        <Metric icon={<CalendarDays />} label="Treinos na semana" value={`${weeklySessions.length}`} />
-        <Metric icon={<TrendingUp />} label="Volume semanal" value={`${Math.round(weeklyVolume)} kg`} />
-        <Metric icon={<Dumbbell />} label="Exercicios disponiveis" value={`${exercises.length}`} />
-      </section>
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_.95fr]">
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
         <div>
-          <SectionTitle copy="Fichas atualizadas recentemente." title="Fichas recentes" />
+          <SectionTitle
+            action={
+              <Button onClick={() => onNavigate("plans")} variant="secondary">
+                <Plus size={17} />
+                Nova ficha
+              </Button>
+            }
+            copy={`${weeklySessions.length} treino${weeklySessions.length === 1 ? "" : "s"} nesta semana.`}
+            title="Suas fichas"
+          />
           <div className="grid gap-3 md:grid-cols-2">
-            {plans.slice(0, 4).map((plan) => (
+            {plans.slice(0, 6).map((plan) => (
               <Card className="p-4" key={plan.id}>
                 <div className="mb-4 h-1.5 rounded-full" style={{ background: plan.color }} />
-                <p className="text-sm uppercase text-zinc-400">{plan.icon}</p>
-                <h3 className="mt-1 text-xl font-semibold">{plan.title}</h3>
+                <h3 className="text-xl font-semibold">{plan.title}</h3>
                 <p className="mt-2 line-clamp-2 min-h-10 text-sm text-zinc-400">{plan.description}</p>
                 <button className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-lime" onClick={() => onNavigate("plans")}>
                   Abrir ficha <ArrowRight size={16} />
                 </button>
               </Card>
             ))}
+            {plans.length === 0 ? (
+              <Card className="grid min-h-48 place-items-center border-dashed p-5 text-center">
+                <div>
+                  <h3 className="text-lg font-semibold">Crie sua primeira ficha</h3>
+                  <p className="mt-2 text-sm text-zinc-400">Escolha grupos musculares e deixe o treino pronto para abrir.</p>
+                </div>
+              </Card>
+            ) : null}
           </div>
         </div>
         <div>
@@ -75,9 +84,7 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
               <>
                 <Badge>{lastPlan?.title ?? "Ficha removida"}</Badge>
                 <h3 className="mt-4 text-2xl font-semibold">{formatLongDate(lastSession.date)}</h3>
-                <p className="mt-2 text-zinc-400">
-                  {lastSession.exercises.length} exercicios, {Math.round(sessionVolume(lastSession))} kg de volume total.
-                </p>
+                <p className="mt-2 text-zinc-400">{lastSession.exercises.length} exercicios registrados.</p>
                 <div className="mt-5 grid gap-2">
                   {lastSession.exercises.slice(0, 3).map((entry) => {
                     const exercise = exercises.find((item) => item.id === entry.exerciseId);
@@ -97,17 +104,5 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
         </div>
       </section>
     </div>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <Card className="flex items-center gap-4 p-4">
-      <div className="grid h-12 w-12 place-items-center rounded-md bg-white/10 text-lime">{icon}</div>
-      <div>
-        <p className="text-sm text-zinc-400">{label}</p>
-        <p className="text-2xl font-semibold">{value}</p>
-      </div>
-    </Card>
   );
 }
