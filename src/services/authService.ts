@@ -38,6 +38,19 @@ export const authService = {
     userRepository.setSessionUserId(stored.id);
     return { ok: true, user: userRepository.toPublicUser(stored) };
   },
+  async loginWithGoogle(): Promise<AuthResult> {
+    if (!supabase) {
+      return { ok: false, message: "Login com Google requer Supabase configurado." };
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    return error ? { ok: false, message: error.message } : { ok: true };
+  },
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = normalizeEmail(input.email);
     if (supabase) {

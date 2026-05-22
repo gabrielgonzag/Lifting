@@ -1,4 +1,4 @@
-import { ArrowRight, BriefcaseBusiness, KeyRound, Mail } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Chrome, KeyRound, Mail } from "lucide-react";
 import { useState } from "react";
 import { AuthFrame } from "../features/auth/AuthFrame";
 import { useAuthStore } from "../store/useAuthStore";
@@ -14,6 +14,7 @@ export default function Login({
   routeForUser: (user: User) => AppRoute;
 }) {
   const login = useAuthStore((state) => state.login);
+  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,12 +31,28 @@ export default function Login({
     onNavigate(routeForUser(result.user));
   };
 
+  const submitGoogle = async () => {
+    const result = await loginWithGoogle();
+    if (!result.ok) {
+      setMessage(result.message ?? "Nao foi possivel entrar com Google.");
+    }
+  };
+
   return (
     <AuthFrame
       copy="Entre para abrir suas fichas, registrar series e separar a experiencia profissional."
       eyebrow="Acesso"
       title="Entrar"
     >
+      <Button className="w-full" disabled={isLoading} onClick={submitGoogle} type="button" variant="secondary">
+        <Chrome size={18} />
+        Entrar com Google
+      </Button>
+      <div className="my-5 flex items-center gap-3 text-xs uppercase text-zinc-500">
+        <span className="h-px flex-1 bg-white/10" />
+        ou use seu email
+        <span className="h-px flex-1 bg-white/10" />
+      </div>
       <form className="grid gap-4" onSubmit={submit}>
         <label className="grid gap-2 text-sm">
           Email

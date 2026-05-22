@@ -25,6 +25,17 @@ Para validar o bundle:
 npm run build
 ```
 
+## Login com Google
+
+O botao de login Google usa o provider OAuth do Supabase. Para habilita-lo no projeto remoto:
+
+1. Crie um OAuth Client Web no Google Auth Platform.
+2. Adicione o callback do provider Google exibido pelo Supabase como Authorized redirect URI no Google.
+3. Habilite Google em Authentication > Providers no Supabase e informe o Client ID e Client Secret.
+4. Inclua as URLs do app, como `http://127.0.0.1:5173`, na configuracao de Site URL/Redirect URLs do Supabase.
+
+Para o Supabase local, preencha `client_id` em `supabase/config.toml` e exponha o segredo apenas por `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET`.
+
 ## Fluxos implementados
 
 - Home limpa com fichas, ultimo treino e atalhos de treino.
