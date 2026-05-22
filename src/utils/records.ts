@@ -37,6 +37,7 @@ export const buildRecordsFromSessions = (sessions: WorkoutSession[]) => {
               if (value <= (previous?.value ?? 0)) return;
               records.push({
                 id: makeId("pr"),
+                userId: session.userId,
                 exerciseId: entry.exerciseId,
                 exerciseName: exercise.name,
                 type,
@@ -44,6 +45,8 @@ export const buildRecordsFromSessions = (sessions: WorkoutSession[]) => {
                 weight: set.weight,
                 reps: set.reps,
                 date: session.date,
+                createdAt: session.date,
+                updatedAt: session.date,
               });
             });
           });
@@ -69,6 +72,7 @@ export const recordsForSession = (
           if (value <= (prior?.value ?? 0)) return;
           nextRecords.push({
             id: makeId("pr"),
+            userId: session.userId,
             exerciseId: entry.exerciseId,
             exerciseName: exercise.name,
             type,
@@ -76,6 +80,8 @@ export const recordsForSession = (
             weight: set.weight,
             reps: set.reps,
             date: session.date,
+            createdAt: session.date,
+            updatedAt: session.updatedAt,
           });
         });
       });

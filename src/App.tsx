@@ -1,33 +1,118 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
-import type { AppView } from "./types";
+import { useAppStore } from "./store/useAppStore";
+import { useAuthStore } from "./store/useAuthStore";
+import type { AppRoute, AppView, User } from "./types";
 
+const AdminPlaceholder = lazy(() => import("./pages/AdminPlaceholder"));
 const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
 const Plans = lazy(() => import("./pages/Plans"));
+const ProfessionalDashboard = lazy(() => import("./pages/ProfessionalDashboard"));
 const Progress = lazy(() => import("./pages/Progress"));
+const Register = lazy(() => import("./pages/Register"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Workout = lazy(() => import("./pages/Workout"));
 
+const routes: AppRoute[] = [
+  "home",
+  "plans",
+  "workout",
+  "progress",
+  "settings",
+  "login",
+  "register",
+  "reset-password",
+  "professional",
+  "admin",
+];
+const publicRoutes: AppRoute[] = ["login", "register", "reset-password"];
+const appViews: AppView[] = ["home", "plans", "workout", "progress", "settings"];
+
+const hashRoute = (): AppRoute => {
+  const route = window.location.hash.replace(/^#\/?/, "") as AppRoute;
+  return routes.includes(route) ? route : "home";
+};
+
+const routeForUser = (user: User): AppRoute => {
+  if (user.role === "professional") return "professional";
+  if (user.role === "admin") return "admin";
+  return "home";
+};
+
 export default function App() {
-  const [view, setView] = useState<AppView>("home");
+  const [route, setRoute] = useState<AppRoute>(hashRoute);
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const logout = useAuthStore((state) => state.logout);
+  const loadUserData = useAppStore((state) => state.loadUserData);
+
+  const navigate = (next: AppRoute) => {
+    window.location.hash = next;
+    setRoute(next);
+  };
+
+  useEffect(() => {
+    const onHashChange = () => setRoute(hashRoute());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    loadUserData(user?.id);
+  }, [loadUserData, user?.id]);
+
+  const guardedRoute = (() => {
+    if (!isAuthenticated && !publicRoutes.includes(route)) return "login";
+    if (isAuthenticated && publicRoutes.includes(route) && user) return routeForUser(user);
+    if (route === "professional" && user?.role !== "professional" && user?.role !== "admin") return "home";
+    if (route === "admin" && user?.role !== "admin") return "home";
+    return route;
+  })();
+
+  useEffect(() => {
+    if (!isLoading && guardedRoute !== route) navigate(guardedRoute);
+  }, [guardedRoute, isLoading, route]);
+
+  if (isLoading) {
+    return <div className="mx-auto mt-8 min-h-64 max-w-xl animate-pulse rounded-lg border border-white/10 bg-white/5" />;
+  }
+
+  if (guardedRoute === "login") return <Login onNavigate={navigate} routeForUser={routeForUser} />;
+  if (guardedRoute === "register") return <Register onNavigate={navigate} routeForUser={routeForUser} />;
+  if (guardedRoute === "reset-password") return <ResetPassword onNavigate={navigate} />;
+
   const page = {
-    home: <Home onNavigate={setView} />,
+    home: <Home onNavigate={navigate} />,
     plans: <Plans />,
     workout: <Workout />,
     progress: <Progress />,
     settings: <Settings />,
-  }[view];
+    professional: <ProfessionalDashboard onNavigate={navigate} />,
+    admin: <AdminPlaceholder />,
+  }[guardedRoute];
+  const activeView = appViews.includes(guardedRoute as AppView) ? (guardedRoute as AppView) : "home";
 
   return (
     <div>
-      <AppShell activeView={view} onNavigate={setView}>
+      <AppShell
+        activeView={activeView}
+        onLogout={async () => {
+          await logout();
+          navigate("login");
+        }}
+        onNavigate={navigate}
+        user={user}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             initial={{ opacity: 0, y: 8 }}
-            key={view}
+            key={guardedRoute}
             transition={{ duration: 0.2 }}
           >
             <Suspense fallback={<div className="min-h-64 animate-pulse rounded-lg border border-white/10 bg-white/5" />}>

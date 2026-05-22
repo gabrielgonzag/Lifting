@@ -66,7 +66,7 @@ export default function Workout() {
   const selectedPlan = plans.find((plan) => plan.id === planId);
   const [draft, setDraft] = useState<DraftExercise[]>(selectedPlan ? buildDraft(selectedPlan) : []);
   const [seconds, setSeconds] = useState(0);
-  const [finished, setFinished] = useState<WorkoutSession | null>(null);
+  const [finished, setFinished] = useState<Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt"> | null>(null);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function Workout() {
 
   const finishWorkout = () => {
     if (!selectedPlan) return;
-    const session: WorkoutSession = {
+    const session: Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt"> = {
       id: makeId("session"),
       workoutPlanId: selectedPlan.id,
       date: new Date().toISOString(),

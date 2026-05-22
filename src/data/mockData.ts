@@ -1,6 +1,7 @@
 import type { WorkoutPlan, WorkoutSession } from "../types";
 
 const now = new Date();
+const demoUserId = "starter-user";
 const daysAgo = (days: number) => {
   const date = new Date(now);
   date.setDate(date.getDate() - days);
@@ -10,6 +11,7 @@ const daysAgo = (days: number) => {
 export const starterPlans: WorkoutPlan[] = [
   {
     id: "plan-upper-push",
+    userId: demoUserId,
     title: "Push controlado",
     description: "Peito, ombro e triceps com progressao de carga.",
     color: "#FF6B57",
@@ -30,6 +32,7 @@ export const starterPlans: WorkoutPlan[] = [
   },
   {
     id: "plan-lower-build",
+    userId: demoUserId,
     title: "Lower build",
     description: "Quadriceps, posterior e gluteo em blocos densos.",
     color: "#B7F34D",
@@ -54,8 +57,11 @@ export const starterPlans: WorkoutPlan[] = [
 export const starterSessions: WorkoutSession[] = [
   {
     id: "session-push-a",
+    userId: demoUserId,
     workoutPlanId: "plan-upper-push",
     date: daysAgo(6),
+    createdAt: daysAgo(6),
+    updatedAt: daysAgo(6),
     exercises: [
       {
         id: "logged-bench-a",
@@ -74,8 +80,11 @@ export const starterSessions: WorkoutSession[] = [
   },
   {
     id: "session-lower-a",
+    userId: demoUserId,
     workoutPlanId: "plan-lower-build",
     date: daysAgo(3),
+    createdAt: daysAgo(3),
+    updatedAt: daysAgo(3),
     exercises: [
       {
         id: "logged-squat-a",

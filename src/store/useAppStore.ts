@@ -1,28 +1,19 @@
 import { create } from "zustand";
-import { starterPlans, starterSessions } from "../data/mockData";
-import { readStoredSnapshot, writeSnapshot } from "../services/appStorage";
 import type { AppSnapshot, WorkoutPlan, WorkoutSession } from "../types";
+import { workoutService } from "../services/workoutService";
 import { makeId } from "../utils/id";
 import { buildRecordsFromSessions, recordsForSession } from "../utils/records";
 
 type AppState = AppSnapshot & {
-  createPlan: (plan: Omit<WorkoutPlan, "id" | "createdAt" | "updatedAt">) => string;
+  userId?: string;
+  loadUserData: (userId?: string) => void;
+  createPlan: (plan: Omit<WorkoutPlan, "id" | "userId" | "createdAt" | "updatedAt">) => string;
   updatePlan: (plan: WorkoutPlan) => void;
   deletePlan: (id: string) => void;
   duplicatePlan: (id: string) => void;
-  saveSession: (session: WorkoutSession) => number;
+  saveSession: (session: Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt">) => number;
   importSnapshot: (snapshot: AppSnapshot) => boolean;
   resetLocalData: () => void;
-};
-
-const seedSnapshot = (): AppSnapshot => {
-  const stored = readStoredSnapshot();
-  const sessions = stored.sessions ?? starterSessions;
-  return {
-    plans: stored.plans ?? starterPlans,
-    sessions,
-    personalRecords: stored.personalRecords ?? buildRecordsFromSessions(sessions),
-  };
 };
 
 const isSnapshot = (value: unknown): value is AppSnapshot => {
@@ -34,14 +25,31 @@ const isSnapshot = (value: unknown): value is AppSnapshot => {
   );
 };
 
+const emptySnapshot: AppSnapshot = {
+  plans: [],
+  sessions: [],
+  personalRecords: [],
+};
+
+const persist = (state: AppState, snapshot: AppSnapshot) => {
+  if (state.userId) workoutService.saveUserSnapshot(state.userId, snapshot);
+};
+
 export const useAppStore = create<AppState>()((set) => ({
-  ...seedSnapshot(),
+  ...emptySnapshot,
+  userId: undefined,
+  loadUserData: (userId) =>
+    set(() => ({
+      ...(userId ? workoutService.loadUserSnapshot(userId) : emptySnapshot),
+      userId,
+    })),
   createPlan: (plan) => {
     const id = makeId("plan");
     const createdAt = new Date().toISOString();
     set((state) => {
-      const next = { plans: [{ ...plan, id, createdAt, updatedAt: createdAt }, ...state.plans] };
-      writeSnapshot({ ...state, ...next });
+      if (!state.userId) return state;
+      const next = { ...state, plans: [{ ...plan, id, userId: state.userId, createdAt, updatedAt: createdAt }, ...state.plans] };
+      persist(state, next);
       return next;
     });
     return id;
@@ -49,17 +57,18 @@ export const useAppStore = create<AppState>()((set) => ({
   updatePlan: (plan) =>
     set((state) => {
       const next = {
+        ...state,
         plans: state.plans.map((item) =>
           item.id === plan.id ? { ...plan, updatedAt: new Date().toISOString() } : item,
         ),
       };
-      writeSnapshot({ ...state, ...next });
+      persist(state, next);
       return next;
     }),
   deletePlan: (id) =>
     set((state) => {
-      const next = { plans: state.plans.filter((plan) => plan.id !== id) };
-      writeSnapshot({ ...state, ...next });
+      const next = { ...state, plans: state.plans.filter((plan) => plan.id !== id) };
+      persist(state, next);
       return next;
     }),
   duplicatePlan: (id) =>
@@ -68,6 +77,7 @@ export const useAppStore = create<AppState>()((set) => ({
       if (!source) return state;
       const timestamp = new Date().toISOString();
       const next = {
+        ...state,
         plans: [
           {
             ...source,
@@ -80,16 +90,24 @@ export const useAppStore = create<AppState>()((set) => ({
           ...state.plans,
         ],
       };
-      writeSnapshot({ ...state, ...next });
+      persist(state, next);
       return next;
     }),
   saveSession: (session) => {
     let recordCount = 0;
     set((state) => {
-      const personalRecords = [...state.personalRecords, ...recordsForSession(session, state.personalRecords)];
+      if (!state.userId) return state;
+      const timestamp = new Date().toISOString();
+      const nextSession: WorkoutSession = {
+        ...session,
+        userId: state.userId,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+      const personalRecords = [...state.personalRecords, ...recordsForSession(nextSession, state.personalRecords)];
       recordCount = personalRecords.length - state.personalRecords.length;
-      const next = { sessions: [session, ...state.sessions], personalRecords };
-      writeSnapshot({ ...state, ...next });
+      const next = { ...state, sessions: [nextSession, ...state.sessions], personalRecords };
+      persist(state, next);
       return next;
     });
     return recordCount;
@@ -97,24 +115,38 @@ export const useAppStore = create<AppState>()((set) => ({
   importSnapshot: (snapshot) => {
     if (!isSnapshot(snapshot)) return false;
     const next = {
+      userId: snapshot.plans[0]?.userId ?? snapshot.sessions[0]?.userId,
       plans: snapshot.plans,
       sessions: snapshot.sessions,
       personalRecords: Array.isArray(snapshot.personalRecords)
         ? snapshot.personalRecords
         : buildRecordsFromSessions(snapshot.sessions),
     };
-    writeSnapshot(next);
-    set(next);
+    set((state) => {
+      if (!state.userId) return state;
+      const timestamp = new Date().toISOString();
+      const owned = {
+        ...state,
+        plans: next.plans.map((plan) => ({ ...plan, userId: state.userId!, createdAt: plan.createdAt ?? timestamp, updatedAt: plan.updatedAt ?? timestamp })),
+        sessions: next.sessions.map((session) => ({ ...session, userId: state.userId!, createdAt: session.createdAt ?? session.date, updatedAt: session.updatedAt ?? timestamp })),
+        personalRecords: next.personalRecords.map((record) => ({ ...record, userId: state.userId!, createdAt: record.createdAt ?? record.date, updatedAt: record.updatedAt ?? timestamp })),
+      };
+      persist(state, owned);
+      return owned;
+    });
     return true;
   },
   resetLocalData: () =>
-    set(() => {
+    set((state) => {
       const next = {
+        userId: state.userId,
         plans: [] as WorkoutPlan[],
         sessions: [] as WorkoutSession[],
         personalRecords: [],
       };
-      writeSnapshot(next);
+      if (state.userId) {
+        persist(state, next);
+      }
       return next;
     }),
 }));

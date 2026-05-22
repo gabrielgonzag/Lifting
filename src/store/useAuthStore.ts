@@ -1,0 +1,69 @@
+import { create } from "zustand";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
+import type { LoginInput, RegisterInput, User, UserRole } from "../types";
+
+type AuthState = {
+  user?: User;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  hydrate: () => void;
+  login: (input: LoginInput) => ReturnType<typeof authService.login>;
+  loginAsDeveloper: (role: UserRole) => ReturnType<typeof authService.loginAsDeveloper>;
+  register: (input: RegisterInput) => ReturnType<typeof authService.register>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => ReturnType<typeof authService.resetPassword>;
+  updateProfile: (profile: Partial<Pick<User, "name" | "avatarUrl">>) => User | undefined;
+};
+
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  user: undefined,
+  isAuthenticated: false,
+  isLoading: true,
+  hydrate: () => {
+    const user = authService.currentUser();
+    set({ user, isAuthenticated: Boolean(user), isLoading: false });
+  },
+  login: async (input) => {
+    set({ isLoading: true });
+    const result = await authService.login(input);
+    set({
+      user: result.user,
+      isAuthenticated: Boolean(result.user),
+      isLoading: false,
+    });
+    return result;
+  },
+  loginAsDeveloper: async (role) => {
+    set({ isLoading: true });
+    const result = await authService.loginAsDeveloper(role);
+    set({
+      user: result.user,
+      isAuthenticated: Boolean(result.user),
+      isLoading: false,
+    });
+    return result;
+  },
+  register: async (input) => {
+    set({ isLoading: true });
+    const result = await authService.register(input);
+    set({
+      user: result.user,
+      isAuthenticated: Boolean(result.user),
+      isLoading: false,
+    });
+    return result;
+  },
+  logout: async () => {
+    await authService.logout();
+    set({ user: undefined, isAuthenticated: false, isLoading: false });
+  },
+  resetPassword: (email) => authService.resetPassword(email),
+  updateProfile: (profile) => {
+    const user = get().user;
+    if (!user) return undefined;
+    const updated = userService.updateProfile(user.id, profile);
+    if (updated) set({ user: updated });
+    return updated;
+  },
+}));
