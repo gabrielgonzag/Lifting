@@ -8,6 +8,7 @@ const missingSupabaseMessage =
 const oauthPopupName = "lifting-google-auth";
 
 const oauthRedirectUrl = () => `${window.location.origin}/`;
+const shouldUseOAuthPopup = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
 const oauthPopupFeatures = () => {
   const width = 520;
@@ -68,6 +69,16 @@ export const authService = {
   async loginWithGoogle(): Promise<AuthResult> {
     if (!supabase) {
       return { ok: false, message: "Login com Google requer Supabase configurado." };
+    }
+
+    if (!shouldUseOAuthPopup()) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: oauthRedirectUrl(),
+        },
+      });
+      return error ? { ok: false, message: error.message } : { ok: true };
     }
 
     const popup = window.open("about:blank", oauthPopupName, oauthPopupFeatures());

@@ -47,6 +47,13 @@ VITE_SUPABASE_ANON_KEY=sua-chave-publica
 
 Em deploys Vite, essas variaveis precisam existir no ambiente de hospedagem antes do build. Se faltarem, a tela de auth mostra erro em vez de salvar usuarios apenas no navegador.
 
+No Railway, adicione essas variaveis no servico antes de gerar o deploy e inclua a URL publica do Railway nas configuracoes de Auth:
+
+- Supabase > Authentication > URL Configuration: Site URL e Redirect URLs.
+- Google Auth Platform > OAuth Client: Authorized JavaScript origins.
+
+O callback autorizado no Google continua sendo o callback do Supabase, por exemplo `https://seu-project-ref.supabase.co/auth/v1/callback`.
+
 ## Fluxos implementados
 
 - Home limpa com fichas, ultimo treino e atalhos de treino.
