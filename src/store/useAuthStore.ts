@@ -38,7 +38,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   loginWithGoogle: async () => {
     set({ isLoading: true });
     const result = await authService.loginWithGoogle();
-    if (!result.ok) set({ isLoading: false });
+    set({
+      user: result.user,
+      isAuthenticated: Boolean(result.user),
+      isLoading: false,
+    });
     return result;
   },
   register: async (input) => {

@@ -5,6 +5,40 @@ import { hasSupabaseConfig, supabase } from "./databaseClient";
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const missingSupabaseMessage =
   "Supabase nao configurado. Verifique as variaveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
+const oauthPopupName = "lifting-google-auth";
+
+const oauthRedirectUrl = () => `${window.location.origin}/`;
+
+const oauthPopupFeatures = () => {
+  const width = 520;
+  const height = 680;
+  const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+  const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+  return `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+};
+
+const waitForSupabaseUser = async (popup: Window) => {
+  const startedAt = Date.now();
+  const timeoutMs = 90_000;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (popup.closed) {
+      return { ok: false, message: "Login com Google cancelado." } satisfies AuthResult;
+    }
+
+    const { data } = await supabase!.auth.getSession();
+    if (data.session?.user) {
+      popup.close();
+      const user = await userRepository.ensureSupabaseProfile(data.session.user.id);
+      return user ? ({ ok: true, user } satisfies AuthResult) : ({ ok: false, message: "Perfil Supabase nao encontrado." } satisfies AuthResult);
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 750));
+  }
+
+  popup.close();
+  return { ok: false, message: "Tempo esgotado ao entrar com Google." } satisfies AuthResult;
+};
 
 export const authService = {
   async currentUser() {
@@ -36,13 +70,31 @@ export const authService = {
       return { ok: false, message: "Login com Google requer Supabase configurado." };
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const popup = window.open("about:blank", oauthPopupName, oauthPopupFeatures());
+    if (!popup) {
+      return { ok: false, message: "Permita popups para entrar com Google." };
+    }
+    popup.document.title = "Entrar com Google";
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: oauthRedirectUrl(),
+        skipBrowserRedirect: true,
       },
     });
-    return error ? { ok: false, message: error.message } : { ok: true };
+    if (error) {
+      popup.close();
+      return { ok: false, message: error.message };
+    }
+
+    if (!data.url) {
+      popup.close();
+      return { ok: false, message: "Nao foi possivel iniciar o Google." };
+    }
+
+    popup.location.href = data.url;
+    return waitForSupabaseUser(popup);
   },
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = normalizeEmail(input.email);

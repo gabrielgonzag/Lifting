@@ -53,10 +53,13 @@ export default function Register({
   };
 
   const submitGoogle = async () => {
+    setMessage("");
     const result = await loginWithGoogle();
-    if (!result.ok) {
+    if (!result.ok || !result.user) {
       setMessage(result.message ?? "Nao foi possivel continuar com Google.");
+      return;
     }
+    onNavigate(routeForUser(result.user));
   };
 
   return (
