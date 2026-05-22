@@ -54,6 +54,8 @@ No Railway, adicione essas variaveis no servico antes de gerar o deploy e inclua
 
 O callback autorizado no Google continua sendo o callback do Supabase, por exemplo `https://seu-project-ref.supabase.co/auth/v1/callback`.
 
+O deploy usa `npm run build` e `npm run start`. O script `start` serve a pasta `dist` na porta `PORT` fornecida pelo Railway.
+
 ## Fluxos implementados
 
 - Home limpa com fichas, ultimo treino e atalhos de treino.

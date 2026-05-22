@@ -78,7 +78,7 @@ export const authService = {
           redirectTo: oauthRedirectUrl(),
         },
       });
-      return error ? { ok: false, message: error.message } : { ok: true };
+      return error ? { ok: false, message: error.message } : { ok: true, redirecting: true, message: "Redirecionando para o Google." };
     }
 
     const popup = window.open("about:blank", oauthPopupName, oauthPopupFeatures());

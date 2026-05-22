@@ -36,6 +36,7 @@ export default function Login({
   const submitGoogle = async () => {
     setMessage("");
     const result = await loginWithGoogle();
+    if (result.redirecting) return;
     if (!result.ok || !result.user) {
       setMessage(result.message ?? "Nao foi possivel entrar com Google.");
       return;

@@ -18,4 +18,5 @@ export type AuthResult = {
   user?: User;
   message?: string;
   requiresEmailConfirmation?: boolean;
+  redirecting?: boolean;
 };
