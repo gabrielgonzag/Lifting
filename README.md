@@ -30,7 +30,7 @@ npm run build
 - Home limpa com fichas, ultimo treino e atalhos de treino.
 - Fichas com busca, filtro, ordenacao, criacao, edicao, duplicacao e exclusao.
 - Editor de ficha com grupos musculares selecionaveis, secoes colapsaveis e reordenacao por drag and drop.
-- Tela de treino com series rapidas, inputs numericos vazios, steppers, RPE, descanso, timer e feedback de serie salva.
+- Tela de treino com linhas compactas de serie, inputs numericos vazios, nota recolhida, timer e feedback de conclusao.
 - PRs de carga, 1RM estimado por Epley e volume por serie.
 - Progresso com curva principal de forca, frequencia semanal e insights resumidos.
 - Backup com exportacao PDF, exportacao/importacao JSON e reset com confirmacao.

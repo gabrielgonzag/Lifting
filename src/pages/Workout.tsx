@@ -3,11 +3,9 @@ import {
   Check,
   CheckCircle2,
   Clock3,
-  Minus,
   Plus,
   TimerReset,
   Trash2,
-  Trophy,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/common/EmptyState";
@@ -21,7 +19,6 @@ import { exercises } from "../data/exercises";
 import { useAppStore } from "../store/useAppStore";
 import type { WorkoutPlan, WorkoutSession } from "../types";
 import { makeId } from "../utils/id";
-import { bestRecord, estimatedOneRepMax } from "../utils/records";
 
 type DraftSet = {
   id: string;
@@ -36,6 +33,7 @@ type DraftExercise = {
   id: string;
   exerciseId: string;
   notes: string;
+  notesOpen: boolean;
   sets: DraftSet[];
 };
 
@@ -54,6 +52,7 @@ const buildDraft = (plan: WorkoutPlan): DraftExercise[] =>
       id: makeId("entry"),
       exerciseId,
       notes: "",
+      notesOpen: false,
       sets: [emptySet()],
     })),
   );
@@ -62,7 +61,6 @@ const toNumber = (value: string) => (value === "" ? 0 : Number(value));
 
 export default function Workout() {
   const plans = useAppStore((state) => state.plans);
-  const personalRecords = useAppStore((state) => state.personalRecords);
   const saveSession = useAppStore((state) => state.saveSession);
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const selectedPlan = plans.find((plan) => plan.id === planId);
@@ -193,21 +191,22 @@ export default function Workout() {
       <div className="grid gap-4">
         {draft.map((entry) => {
           const exercise = exercises.find((item) => item.id === entry.exerciseId);
-          const weightRecord = bestRecord(personalRecords, entry.exerciseId, "absolute_weight");
-          const oneRmRecord = bestRecord(personalRecords, entry.exerciseId, "estimated_1rm");
           return (
-            <Card className="overflow-hidden p-4" key={entry.id}>
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <Card className="overflow-hidden p-3 sm:p-4" key={entry.id}>
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold">{exercise?.name}</h3>
+                  <h3 className="text-lg font-semibold">{exercise?.name}</h3>
                   <p className="text-sm text-zinc-400">{exercise?.muscleGroup}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {weightRecord ? <Badge>PR {Math.round(weightRecord.value * 10) / 10} kg</Badge> : null}
-                  {oneRmRecord ? <Badge>1RM {Math.round(oneRmRecord.value)} kg</Badge> : null}
-                </div>
               </div>
-              <div className="grid gap-2">
+              <div className="grid grid-cols-[2.5rem_minmax(4.5rem,1fr)_minmax(4.5rem,1fr)_3rem_2.5rem] items-center gap-1 border-b border-white/10 px-1 pb-1 text-[11px] font-semibold uppercase text-zinc-500 sm:grid-cols-[3rem_8rem_7rem_3rem_2.5rem]">
+                <span>Set</span>
+                <span>Kg</span>
+                <span>Reps</span>
+                <span className="text-center">Ok</span>
+                <span />
+              </div>
+              <div className="grid">
                 {entry.sets.map((set, index) => (
                   <SetRow
                     key={set.id}
@@ -229,8 +228,9 @@ export default function Workout() {
                   />
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-1">
                 <Button
+                  className="min-h-9 px-3 text-sm"
                   onClick={() =>
                     setDraft((entries) =>
                       entries.map((item) => (item.id === entry.id ? { ...item, sets: [...item.sets, emptySet()] } : item)),
@@ -238,31 +238,51 @@ export default function Workout() {
                   }
                   variant="secondary"
                 >
-                  <Plus size={17} />
+                  <Plus size={15} />
                   Serie
                 </Button>
-                <Button onClick={() => setSeconds(toNumber(entry.sets.at(-1)?.rest ?? "90") || 90)} variant="ghost">
-                  <Clock3 size={17} />
+                <Button
+                  className="min-h-9 px-3 text-sm"
+                  onClick={() => setSeconds(toNumber(entry.sets.at(-1)?.rest ?? "90") || 90)}
+                  variant="ghost"
+                >
+                  <Clock3 size={15} />
                   Descanso
                 </Button>
-                <Badge className="gap-1">
-                  <Trophy size={14} />
-                  {previewOneRm(entry.sets)}
-                </Badge>
-              </div>
-              <label className="mt-3 grid gap-2 text-sm">
-                Nota
-                <Textarea
-                  className="min-h-16"
-                  onChange={(event) =>
+                <Button
+                  className="min-h-9 px-3 text-sm"
+                  onClick={() =>
                     setDraft((entries) =>
-                      entries.map((item) => (item.id === entry.id ? { ...item, notes: event.target.value } : item)),
+                      entries.map((item) =>
+                        item.id === entry.id ? { ...item, notesOpen: !item.notesOpen } : item,
+                      ),
                     )
                   }
-                  placeholder="Tecnica ou ajuste da proxima sessao."
-                  value={entry.notes}
-                />
-              </label>
+                  variant="ghost"
+                >
+                  {entry.notes ? "Editar nota" : "Adicionar nota"}
+                </Button>
+              </div>
+              {entry.notesOpen ? (
+                <motion.label
+                  animate={{ height: "auto", opacity: 1 }}
+                  className="mt-2 grid gap-1 overflow-hidden text-sm"
+                  initial={{ height: 0, opacity: 0 }}
+                >
+                  Nota
+                  <Textarea
+                    autoFocus
+                    className="min-h-16"
+                    onChange={(event) =>
+                      setDraft((entries) =>
+                        entries.map((item) => (item.id === entry.id ? { ...item, notes: event.target.value } : item)),
+                      )
+                    }
+                    placeholder="Tecnica ou ajuste da proxima sessao."
+                    value={entry.notes}
+                  />
+                </motion.label>
+              ) : null}
             </Card>
           );
         })}
@@ -295,42 +315,68 @@ function SetRow({
   onRemove: () => void;
 }) {
   return (
-    <div className={`rounded-md border p-2 ${set.completed ? "border-lime/35 bg-lime/10" : "border-white/10 bg-white/5"}`}>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <Badge className="min-h-9">Serie {index + 1}</Badge>
-        <div className="flex gap-1">
-          <Button aria-label={`Concluir serie ${index + 1}`} onClick={onComplete} size="icon" title="Concluir serie" variant={set.completed ? "primary" : "secondary"}>
-            <Check size={17} />
-          </Button>
-          <Button aria-label={`Remover serie ${index + 1}`} disabled={!removable} onClick={onRemove} size="icon" title="Remover serie" variant="ghost">
-            <Trash2 size={17} />
-          </Button>
-        </div>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <NumberStepper decimal label="Carga" onChange={(value) => onChange("weight", value)} quickStep={2.5} suffix="kg" value={set.weight} />
-        <NumberStepper label="Reps" onChange={(value) => onChange("reps", value)} quickStep={1} value={set.reps} />
-        <NumberStepper label="RPE" max={10} onChange={(value) => onChange("rpe", value)} quickStep={1} value={set.rpe} />
-        <NumberStepper label="Descanso" onChange={(value) => onChange("rest", value)} quickStep={15} suffix="s" value={set.rest} />
-      </div>
-    </div>
+    <motion.div
+      animate={{
+        backgroundColor: set.completed ? "rgba(183,243,77,0.08)" : "rgba(255,255,255,0)",
+        opacity: set.completed ? 0.58 : 1,
+      }}
+      className="grid grid-cols-[2.5rem_minmax(4.5rem,1fr)_minmax(4.5rem,1fr)_3rem_2.5rem] items-center gap-1 border-b border-white/5 px-1 py-1 last:border-b-0 sm:grid-cols-[3rem_8rem_7rem_3rem_2.5rem]"
+      layout
+    >
+      <span className="text-sm font-semibold text-zinc-400">{index + 1}</span>
+      <CompactNumberInput
+        decimal
+        label={`Carga da serie ${index + 1}`}
+        onChange={(value) => onChange("weight", value)}
+        placeholder="0"
+        value={set.weight}
+      />
+      <CompactNumberInput
+        label={`Repeticoes da serie ${index + 1}`}
+        onChange={(value) => onChange("reps", value)}
+        placeholder="0"
+        value={set.reps}
+      />
+      <button
+        aria-label={`${set.completed ? "Reabrir" : "Concluir"} serie ${index + 1}`}
+        className={`grid h-10 w-10 place-items-center rounded-md transition ${
+          set.completed ? "bg-lime text-zinc-950 shadow-[0_0_24px_rgba(183,243,77,.25)]" : "bg-white/10 text-zinc-300 hover:bg-white/15"
+        }`}
+        onClick={onComplete}
+        title="Concluir serie"
+      >
+        <motion.span
+          animate={{ scale: set.completed ? [0.7, 1.18, 1] : 1, rotate: set.completed ? [0, -8, 0] : 0 }}
+          transition={{ duration: 0.28 }}
+        >
+          <Check size={17} strokeWidth={3} />
+        </motion.span>
+      </button>
+      <Button
+        aria-label={`Remover serie ${index + 1}`}
+        className="h-10 min-h-10 w-10 text-zinc-500"
+        disabled={!removable}
+        onClick={onRemove}
+        size="icon"
+        title="Remover serie"
+        variant="ghost"
+      >
+        <Trash2 size={15} />
+      </Button>
+    </motion.div>
   );
 }
 
-function NumberStepper({
+function CompactNumberInput({
   decimal,
   label,
-  max,
-  quickStep,
-  suffix,
+  placeholder,
   value,
   onChange,
 }: {
   decimal?: boolean;
   label: string;
-  max?: number;
-  quickStep: number;
-  suffix?: string;
+  placeholder: string;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -342,41 +388,18 @@ function NumberStepper({
     if (singleDecimal === "") return "";
     const next = Number(singleDecimal);
     if (!Number.isFinite(next) || next < 0) return "";
-    return max ? String(Math.min(next, max)) : singleDecimal.replace(/^0+(?=\d)/, "");
-  };
-  const nudge = (delta: number) => {
-    const next = Math.max(0, Math.min(max ?? Number.POSITIVE_INFINITY, (toNumber(value) || 0) + delta));
-    onChange(next === 0 ? "" : String(Math.round(next * 100) / 100));
+    return singleDecimal.replace(/^0+(?=\d)/, "");
   };
 
   return (
-    <label className="grid gap-1 text-xs font-medium text-zinc-400">
-      {label}
-      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1">
-        <Button aria-label={`Diminuir ${label}`} onClick={() => nudge(-quickStep)} size="icon" title={`Diminuir ${label}`} variant="ghost">
-          <Minus size={16} />
-        </Button>
-        <div className="relative">
-          <input
-            aria-label={label}
-            className="min-h-12 w-full rounded-md border border-white/10 bg-black/25 px-3 pr-9 text-center text-lg font-semibold text-white outline-none placeholder:text-zinc-600 focus:border-lime"
-            inputMode={decimal ? "decimal" : "numeric"}
-            onChange={(event) => onChange(clean(event.target.value))}
-            pattern={decimal ? "[0-9]*[.,]?[0-9]*" : "[0-9]*"}
-            placeholder="0"
-            value={value}
-          />
-          {suffix ? <span className="pointer-events-none absolute right-2 top-4 text-xs text-zinc-500">{suffix}</span> : null}
-        </div>
-        <Button aria-label={`Aumentar ${label}`} onClick={() => nudge(quickStep)} size="icon" title={`Aumentar ${label}`} variant="secondary">
-          <Plus size={16} />
-        </Button>
-      </div>
-    </label>
+    <input
+      aria-label={label}
+      className="h-10 w-full rounded-md border border-transparent bg-black/20 px-2 text-center text-base font-semibold text-white outline-none placeholder:text-zinc-600 focus:border-lime focus:bg-black/30"
+      inputMode={decimal ? "decimal" : "numeric"}
+      onChange={(event) => onChange(clean(event.target.value))}
+      pattern={decimal ? "[0-9]*[.,]?[0-9]*" : "[0-9]*"}
+      placeholder={placeholder}
+      value={value}
+    />
   );
-}
-
-function previewOneRm(sets: DraftSet[]) {
-  const next = Math.max(...sets.map((set) => estimatedOneRepMax(toNumber(set.weight), toNumber(set.reps))), 0);
-  return next ? `1RM da serie ${Math.round(next)} kg` : "1RM aparece ao preencher";
 }
