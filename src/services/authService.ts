@@ -1,9 +1,10 @@
 import { userRepository } from "../repositories/userRepository";
-import type { AuthResult, LoginInput, RegisterInput, User } from "../types";
-import { makeId } from "../utils/id";
+import type { AuthResult, LoginInput, RegisterInput } from "../types";
 import { hasSupabaseConfig, supabase } from "./databaseClient";
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const missingSupabaseMessage =
+  "Supabase nao configurado. Verifique as variaveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
 
 export const authService = {
   async currentUser() {
@@ -11,7 +12,7 @@ export const authService = {
       const { data } = await supabase.auth.getSession();
       return data.session?.user ? userRepository.ensureSupabaseProfile(data.session.user.id) : undefined;
     }
-    return userRepository.getSessionUser();
+    return undefined;
   },
   async login({ email, password, asProfessional }: LoginInput): Promise<AuthResult> {
     if (supabase) {
@@ -28,15 +29,7 @@ export const authService = {
       }
       return { ok: true, user };
     }
-    const stored = userRepository.findByEmail(normalizeEmail(email));
-    if (!stored || stored.password !== password) {
-      return { ok: false, message: "Email ou senha invalidos." };
-    }
-    if (asProfessional && stored.role !== "professional" && stored.role !== "admin") {
-      return { ok: false, message: "Essa conta nao possui perfil profissional." };
-    }
-    userRepository.setSessionUserId(stored.id);
-    return { ok: true, user: userRepository.toPublicUser(stored) };
+    return { ok: false, message: missingSupabaseMessage };
   },
   async loginWithGoogle(): Promise<AuthResult> {
     if (!supabase) {
@@ -77,22 +70,7 @@ export const authService = {
       const user = await userRepository.ensureSupabaseProfile(data.user.id);
       return user ? { ok: true, user } : { ok: false, message: "Conta criada. Entre novamente." };
     }
-    if (userRepository.findByEmail(email)) {
-      return { ok: false, message: "Ja existe uma conta com esse email." };
-    }
-    const timestamp = new Date().toISOString();
-    const user: User = {
-      id: makeId("user"),
-      name: input.name.trim(),
-      email,
-      role: input.role,
-      plan: input.role === "professional" ? "professional" : "free",
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    userRepository.create(user, input.password);
-    userRepository.setSessionUserId(user.id);
-    return { ok: true, user };
+    return { ok: false, message: missingSupabaseMessage };
   },
   async logout() {
     if (supabase) {
@@ -107,12 +85,9 @@ export const authService = {
         ? { ok: false, message: error.message }
         : { ok: true, message: "Se houver uma conta, as instrucoes serao enviadas." };
     }
-    const exists = Boolean(userRepository.findByEmail(normalizeEmail(email)));
     return {
-      ok: true,
-      message: exists
-        ? "Instrucoes de recuperacao preparadas para esse email."
-        : "Se houver uma conta, as instrucoes serao enviadas.",
+      ok: false,
+      message: missingSupabaseMessage,
     };
   },
 };

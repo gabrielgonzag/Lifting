@@ -36,6 +36,17 @@ O botao de login Google usa o provider OAuth do Supabase. Para habilita-lo no pr
 
 Para o Supabase local, preencha `client_id` em `supabase/config.toml`, exponha o segredo apenas por `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET` e habilite o provider local.
 
+## Variaveis de ambiente
+
+O cadastro e login exigem Supabase configurado no build da aplicacao:
+
+```env
+VITE_SUPABASE_URL=https://seu-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-publica
+```
+
+Em deploys Vite, essas variaveis precisam existir no ambiente de hospedagem antes do build. Se faltarem, a tela de auth mostra erro em vez de salvar usuarios apenas no navegador.
+
 ## Fluxos implementados
 
 - Home limpa com fichas, ultimo treino e atalhos de treino.
