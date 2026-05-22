@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.npm-cache/
+.codex-node/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
