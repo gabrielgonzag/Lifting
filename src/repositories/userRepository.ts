@@ -68,6 +68,14 @@ export const userRepository = {
     const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
     return error || !data ? undefined : profileToUser(data as ProfileRow);
   },
+  async ensureSupabaseProfile(id: string) {
+    if (!supabase) return undefined;
+    const existing = await this.getSupabaseProfile(id);
+    if (existing) return existing;
+
+    const { error } = await supabase.rpc("ensure_profile");
+    return error ? undefined : this.getSupabaseProfile(id);
+  },
   async updateSupabaseProfile(id: string, profile: Partial<Pick<User, "name" | "avatarUrl">>) {
     if (!supabase) return undefined;
     const { data, error } = await supabase
