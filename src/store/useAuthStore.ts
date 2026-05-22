@@ -21,8 +21,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   hydrate: () => {
-    const user = authService.currentUser();
-    set({ user, isAuthenticated: Boolean(user), isLoading: false });
+    authService.currentUser().then((user) => {
+      set({ user, isAuthenticated: Boolean(user), isLoading: false });
+    });
   },
   login: async (input) => {
     set({ isLoading: true });
@@ -63,6 +64,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const user = get().user;
     if (!user) return undefined;
     const updated = userService.updateProfile(user.id, profile);
+    if (updated instanceof Promise) {
+      updated.then((next) => {
+        if (next) set({ user: next });
+      });
+      return undefined;
+    }
     if (updated) set({ user: updated });
     return updated;
   },

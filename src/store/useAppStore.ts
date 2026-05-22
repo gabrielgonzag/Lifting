@@ -6,7 +6,7 @@ import { buildRecordsFromSessions, recordsForSession } from "../utils/records";
 
 type AppState = AppSnapshot & {
   userId?: string;
-  loadUserData: (userId?: string) => void;
+  loadUserData: (userId?: string) => Promise<void>;
   createPlan: (plan: Omit<WorkoutPlan, "id" | "userId" | "createdAt" | "updatedAt">) => string;
   updatePlan: (plan: WorkoutPlan) => void;
   deletePlan: (id: string) => void;
@@ -32,17 +32,16 @@ const emptySnapshot: AppSnapshot = {
 };
 
 const persist = (state: AppState, snapshot: AppSnapshot) => {
-  if (state.userId) workoutService.saveUserSnapshot(state.userId, snapshot);
+  if (state.userId) void workoutService.saveUserSnapshot(state.userId, snapshot);
 };
 
 export const useAppStore = create<AppState>()((set) => ({
   ...emptySnapshot,
   userId: undefined,
-  loadUserData: (userId) =>
-    set(() => ({
-      ...(userId ? workoutService.loadUserSnapshot(userId) : emptySnapshot),
-      userId,
-    })),
+  loadUserData: async (userId) => {
+    const snapshot = userId ? await workoutService.loadUserSnapshot(userId) : emptySnapshot;
+    set(() => ({ ...snapshot, userId }));
+  },
   createPlan: (plan) => {
     const id = makeId("plan");
     const createdAt = new Date().toISOString();

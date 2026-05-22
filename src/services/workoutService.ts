@@ -6,7 +6,6 @@ export const workoutService = {
     return workoutRepository.loadSnapshot(userId);
   },
   saveUserSnapshot(userId: string, snapshot: AppSnapshot) {
-    workoutRepository.saveSnapshot(userId, snapshot);
+    return workoutRepository.saveSnapshot(userId, snapshot);
   },
 };
-

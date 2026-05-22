@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import type { DatabaseCollection } from "../types/database";
 
 const collectionKeys: Record<DatabaseCollection, string> = {
@@ -43,3 +44,17 @@ export const databaseClient = {
   },
 };
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
+
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : undefined;

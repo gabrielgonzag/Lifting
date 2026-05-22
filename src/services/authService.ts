@@ -1,6 +1,7 @@
 import { userRepository } from "../repositories/userRepository";
 import type { AuthResult, LoginInput, RegisterInput, User, UserRole } from "../types";
 import { makeId } from "../utils/id";
+import { hasSupabaseConfig, supabase } from "./databaseClient";
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
@@ -43,11 +44,31 @@ const ensureDeveloperUsers = () => {
 };
 
 export const authService = {
-  currentUser() {
+  async currentUser() {
     ensureDeveloperUsers();
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.user
+        ? userRepository.getSupabaseProfile(data.session.user.id)
+        : userRepository.getSessionUser();
+    }
     return userRepository.getSessionUser();
   },
   async login({ email, password, asProfessional }: LoginInput): Promise<AuthResult> {
+    if (supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizeEmail(email),
+        password,
+      });
+      if (error || !data.user) return { ok: false, message: "Email ou senha invalidos." };
+      const user = await userRepository.getSupabaseProfile(data.user.id);
+      if (!user) return { ok: false, message: "Perfil Supabase nao encontrado." };
+      if (asProfessional && user.role !== "professional" && user.role !== "admin") {
+        await supabase.auth.signOut();
+        return { ok: false, message: "Essa conta nao possui perfil profissional." };
+      }
+      return { ok: true, user };
+    }
     const stored = userRepository.findByEmail(normalizeEmail(email));
     if (!stored || stored.password !== password) {
       return { ok: false, message: "Email ou senha invalidos." };
@@ -68,6 +89,25 @@ export const authService = {
   },
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = normalizeEmail(input.email);
+    if (supabase) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: input.password,
+        options: {
+          data: {
+            name: input.name.trim(),
+            role: input.role,
+            plan: input.role === "professional" ? "professional" : "free",
+          },
+        },
+      });
+      if (error) return { ok: false, message: error.message };
+      if (!data.user || !data.session) {
+        return { ok: false, message: "Conta criada. Confirme seu email para entrar." };
+      }
+      const user = await userRepository.getSupabaseProfile(data.user.id);
+      return user ? { ok: true, user } : { ok: false, message: "Conta criada. Entre novamente." };
+    }
     if (userRepository.findByEmail(email)) {
       return { ok: false, message: "Ja existe uma conta com esse email." };
     }
@@ -86,9 +126,18 @@ export const authService = {
     return { ok: true, user };
   },
   async logout() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     userRepository.setSessionUserId();
   },
   async resetPassword(email: string): Promise<AuthResult> {
+    if (supabase) {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email));
+      return error
+        ? { ok: false, message: error.message }
+        : { ok: true, message: "Se houver uma conta, as instrucoes serao enviadas." };
+    }
     const exists = Boolean(userRepository.findByEmail(normalizeEmail(email)));
     return {
       ok: true,
@@ -98,3 +147,5 @@ export const authService = {
     };
   },
 };
+
+export const authBackend = hasSupabaseConfig ? "supabase" : "local";
