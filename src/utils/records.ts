@@ -11,6 +11,9 @@ const setMetricValue = (type: PersonalRecordType, set: WorkoutSet) => {
   return set.weight * set.reps;
 };
 
+const isCompletedSet = (set: WorkoutSet) =>
+  set.completed === true && set.weight > 0 && set.reps > 0;
+
 export const recordLabel = (type: PersonalRecordType) => {
   if (type === "absolute_weight") return "Carga";
   if (type === "estimated_1rm") return "1RM";
@@ -26,7 +29,7 @@ export const buildRecordsFromSessions = (sessions: WorkoutSession[]) => {
         const exercise = exercises.find((item) => item.id === entry.exerciseId);
         if (!exercise) return;
         entry.sets
-          .filter((set) => set.weight > 0 && set.reps > 0)
+          .filter(isCompletedSet)
           .forEach((set) => {
             (["absolute_weight", "estimated_1rm", "set_volume"] as PersonalRecordType[]).forEach((type) => {
               const value = setMetricValue(type, set);
@@ -58,7 +61,7 @@ export const recordsForSession = (
     const exercise = exercises.find((item) => item.id === entry.exerciseId);
     if (!exercise) return;
     entry.sets
-      .filter((set) => set.weight > 0 && set.reps > 0)
+      .filter(isCompletedSet)
       .forEach((set) => {
         (["absolute_weight", "estimated_1rm", "set_volume"] as PersonalRecordType[]).forEach((type) => {
           const prior = bestRecord([...previousRecords, ...nextRecords], entry.exerciseId, type);

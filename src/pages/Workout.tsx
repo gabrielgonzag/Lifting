@@ -199,10 +199,11 @@ export default function Workout() {
                   <p className="text-sm text-zinc-400">{exercise?.muscleGroup}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-[2.5rem_minmax(4.5rem,1fr)_minmax(4.5rem,1fr)_3rem_2.5rem] items-center gap-1 border-b border-white/10 px-1 pb-1 text-[11px] font-semibold uppercase text-zinc-500 sm:grid-cols-[3rem_8rem_7rem_3rem_2.5rem]">
+              <div className="grid grid-cols-[2rem_minmax(4rem,1fr)_minmax(4rem,1fr)_3.25rem_2.75rem_2.25rem] items-center gap-1 border-b border-white/10 px-1 pb-1 text-[11px] font-semibold uppercase text-zinc-500 sm:grid-cols-[3rem_7rem_6rem_4rem_3rem_2.5rem]">
                 <span>Set</span>
                 <span>Kg</span>
                 <span>Reps</span>
+                <span>RPE</span>
                 <span className="text-center">Ok</span>
                 <span />
               </div>
@@ -320,7 +321,7 @@ function SetRow({
         backgroundColor: set.completed ? "rgba(183,243,77,0.08)" : "rgba(255,255,255,0)",
         opacity: set.completed ? 0.58 : 1,
       }}
-      className="grid grid-cols-[2.5rem_minmax(4.5rem,1fr)_minmax(4.5rem,1fr)_3rem_2.5rem] items-center gap-1 border-b border-white/5 px-1 py-1 last:border-b-0 sm:grid-cols-[3rem_8rem_7rem_3rem_2.5rem]"
+      className="grid grid-cols-[2rem_minmax(4rem,1fr)_minmax(4rem,1fr)_3.25rem_2.75rem_2.25rem] items-center gap-1 border-b border-white/5 px-1 py-1 last:border-b-0 sm:grid-cols-[3rem_7rem_6rem_4rem_3rem_2.5rem]"
       layout
     >
       <span className="text-sm font-semibold text-zinc-400">{index + 1}</span>
@@ -336,6 +337,14 @@ function SetRow({
         onChange={(value) => onChange("reps", value)}
         placeholder="0"
         value={set.reps}
+      />
+      <CompactNumberInput
+        decimal
+        label={`RPE opcional da serie ${index + 1}`}
+        max={10}
+        onChange={(value) => onChange("rpe", value)}
+        placeholder="-"
+        value={set.rpe}
       />
       <button
         aria-label={`${set.completed ? "Reabrir" : "Concluir"} serie ${index + 1}`}
@@ -370,12 +379,14 @@ function SetRow({
 function CompactNumberInput({
   decimal,
   label,
+  max,
   placeholder,
   value,
   onChange,
 }: {
   decimal?: boolean;
   label: string;
+  max?: number;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
@@ -387,7 +398,7 @@ function CompactNumberInput({
       : normalized;
     if (singleDecimal === "") return "";
     const next = Number(singleDecimal);
-    if (!Number.isFinite(next) || next < 0) return "";
+    if (!Number.isFinite(next) || next < 0 || (max !== undefined && next > max)) return "";
     return singleDecimal.replace(/^0+(?=\d)/, "");
   };
 
