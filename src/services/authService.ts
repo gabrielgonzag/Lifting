@@ -53,8 +53,13 @@ export const authService = {
         },
       });
       if (error) return { ok: false, message: error.message };
-      if (!data.user || !data.session) {
-        return { ok: false, message: "Conta criada. Confirme seu email para entrar." };
+      if (!data.user) return { ok: false, message: "Nao foi possivel criar sua conta." };
+      if (!data.session) {
+        return {
+          ok: true,
+          message: "Conta criada. Confirme seu email para entrar.",
+          requiresEmailConfirmation: true,
+        };
       }
       const user = await userRepository.getSupabaseProfile(data.user.id);
       return user ? { ok: true, user } : { ok: false, message: "Conta criada. Entre novamente." };

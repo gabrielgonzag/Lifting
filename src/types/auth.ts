@@ -17,5 +17,5 @@ export type AuthResult = {
   ok: boolean;
   user?: User;
   message?: string;
+  requiresEmailConfirmation?: boolean;
 };
-

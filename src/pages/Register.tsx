@@ -39,8 +39,13 @@ export default function Register({
       password,
       role: professional ? "professional" : "casual",
     });
-    if (!result.ok || !result.user) {
+    if (!result.ok) {
       setMessage(result.message ?? "Nao foi possivel criar sua conta.");
+      return;
+    }
+    if (result.requiresEmailConfirmation || !result.user) {
+      setMessage(result.message ?? "Conta criada. Confirme seu email para entrar.");
+      window.setTimeout(() => onNavigate("login"), 2400);
       return;
     }
     onNavigate(routeForUser(result.user));
@@ -91,4 +96,3 @@ export default function Register({
     </AuthFrame>
   );
 }
-
