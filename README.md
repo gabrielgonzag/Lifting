@@ -34,7 +34,7 @@ O botao de login Google usa o provider OAuth do Supabase. Para habilita-lo no pr
 3. Habilite Google em Authentication > Providers no Supabase e informe o Client ID e Client Secret.
 4. Inclua as URLs do app, como `http://127.0.0.1:5173`, na configuracao de Site URL/Redirect URLs do Supabase.
 
-Para o Supabase local, preencha `client_id` em `supabase/config.toml` e exponha o segredo apenas por `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET`.
+Para o Supabase local, preencha `client_id` em `supabase/config.toml`, exponha o segredo apenas por `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET` e habilite o provider local.
 
 ## Fluxos implementados
 
