@@ -3,7 +3,8 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import { useAppStore } from "./store/useAppStore";
 import { useAuthStore } from "./store/useAuthStore";
-import type { AppRoute, AppView, User } from "./types";
+import type { AppRoute, AppView } from "./types";
+import { appViews, guardRoute, parseHashRoute, routeForUser } from "./utils/routeGuards";
 
 const AdminPlaceholder = lazy(() => import("./pages/AdminPlaceholder"));
 const Home = lazy(() => import("./pages/Home"));
@@ -16,35 +17,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Workout = lazy(() => import("./pages/Workout"));
 
-const routes: AppRoute[] = [
-  "home",
-  "plans",
-  "workout",
-  "progress",
-  "settings",
-  "login",
-  "register",
-  "reset-password",
-  "professional",
-  "coach",
-  "coach/students",
-  "coach/invites",
-  "admin",
-];
-const publicRoutes: AppRoute[] = ["login", "register", "reset-password"];
-const appViews: AppView[] = ["home", "plans", "workout", "progress", "settings"];
-
-const hashRoute = (): AppRoute => {
-  const route = window.location.hash.replace(/^#\/?/, "").split("?")[0] as AppRoute;
-  if (route.startsWith("coach/students/")) return route;
-  return routes.includes(route) ? route : "home";
-};
-
-const routeForUser = (user: User): AppRoute => {
-  if (user.role === "professional") return "coach";
-  if (user.role === "admin") return "admin";
-  return "home";
-};
+const hashRoute = (): AppRoute => parseHashRoute(window.location.hash);
 
 export default function App() {
   const [route, setRoute] = useState<AppRoute>(hashRoute);
@@ -69,13 +42,7 @@ export default function App() {
     loadUserData(user?.id);
   }, [loadUserData, user?.id]);
 
-  const guardedRoute = (() => {
-    if (!isAuthenticated && !publicRoutes.includes(route)) return "login";
-    if (isAuthenticated && publicRoutes.includes(route) && user) return routeForUser(user);
-    if ((route === "professional" || route.startsWith("coach")) && user?.role !== "professional" && user?.role !== "admin") return "home";
-    if (route === "admin" && user?.role !== "admin") return "home";
-    return route;
-  })();
+  const guardedRoute = guardRoute({ isAuthenticated, route, user });
 
   useEffect(() => {
     if (!isLoading && guardedRoute !== route) navigate(guardedRoute);
