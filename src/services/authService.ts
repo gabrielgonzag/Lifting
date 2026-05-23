@@ -42,6 +42,20 @@ const waitForSupabaseUser = async (popup: Window) => {
 };
 
 export const authService = {
+  async completeOAuthRedirect() {
+    if (!supabase || typeof window === "undefined") return { ok: true } satisfies AuthResult;
+
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    if (!code) return { ok: true } satisfies AuthResult;
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) return { ok: false, message: error.message } satisfies AuthResult;
+
+    url.searchParams.delete("code");
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash || "#home"}`);
+    return { ok: true } satisfies AuthResult;
+  },
   async currentUser() {
     if (supabase) {
       const { data } = await supabase.auth.getSession();

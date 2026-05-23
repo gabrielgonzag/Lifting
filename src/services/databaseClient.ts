@@ -54,7 +54,8 @@ export const supabase = supabaseUrl && supabaseAnonKey
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false,
+        flowType: "pkce",
       },
     })
   : undefined;
