@@ -11,5 +11,10 @@ export type DatabaseCollection =
   | "workout_plans"
   | "workout_sessions"
   | "personal_records"
-  | "saved_exercises";
-
+  | "saved_exercises"
+  | "coach_students"
+  | "coach_invites"
+  | "shared_workout_plans"
+  | "coach_notes"
+  | "coach_student_progress"
+  | "coach_training_context";

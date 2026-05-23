@@ -8,6 +8,12 @@ const collectionKeys: Record<DatabaseCollection, string> = {
   workout_sessions: "content_env_workout_sessions",
   personal_records: "content_env_personal_records",
   saved_exercises: "content_env_saved_exercises",
+  coach_students: "lifting_coach_students",
+  coach_invites: "lifting_coach_invites",
+  shared_workout_plans: "lifting_shared_workout_plans",
+  coach_notes: "lifting_coach_notes",
+  coach_student_progress: "lifting_coach_student_progress",
+  coach_training_context: "lifting_coach_training_context",
 };
 
 const readRaw = (key: string) => {

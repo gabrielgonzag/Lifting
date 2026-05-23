@@ -1,14 +1,21 @@
 import type { BaseEntity } from "./database";
 
 export type { AuthResult, LoginInput, RegisterInput } from "./auth";
+export type { CoachRouteView, CoachWorkspace } from "./coach";
 export type { BaseEntity } from "./database";
+export type { CoachInvite, InviteStatus } from "./invite";
+export type { CoachNote, CoachNoteType, SharedWorkoutExercise, SharedWorkoutPlan } from "./sharedWorkout";
 export type {
   CoachStudentRelation,
-  InviteStatus,
-  User,
-  UserPlan,
-  UserRole,
-} from "./user";
+  RelationStatus,
+  StudentDashboard,
+  StudentFrequencyPoint,
+  StudentProfile,
+  StudentProgressPoint,
+  StudentWorkoutHistory,
+} from "./student";
+export type { User, UserPlan, UserRole } from "./user";
+export type { CoachTrainingContext, CoachWorkoutSyncPayload, WorkoutSyncResult } from "./workout";
 
 export type Category = "membros superiores" | "membros inferiores";
 
@@ -79,13 +86,22 @@ export type PersonalRecord = BaseEntity & {
 
 export type AppView = "home" | "plans" | "workout" | "progress" | "settings";
 
+export type CoachRoute =
+  | "coach"
+  | "coach/students"
+  | `coach/students/${string}`
+  | `coach/students/${string}/workouts`
+  | `coach/students/${string}/progress`
+  | "coach/invites";
+
 export type AppRoute =
   | AppView
   | "login"
   | "register"
   | "reset-password"
   | "professional"
-  | "admin";
+  | "admin"
+  | CoachRoute;
 
 export type AppSnapshot = {
   plans: WorkoutPlan[];

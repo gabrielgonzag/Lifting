@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AuthFrame } from "../features/auth/AuthFrame";
+import { inviteService } from "../services/inviteService";
 import { useAuthStore } from "../store/useAuthStore";
 import type { AppRoute, User } from "../types";
 
@@ -23,6 +24,7 @@ export default function Register({
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [professional, setProfessional] = useState(false);
   const [message, setMessage] = useState("");
+  const inviteCode = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("invite");
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,6 +51,7 @@ export default function Register({
       window.setTimeout(() => onNavigate("login"), 2400);
       return;
     }
+    if (inviteCode) inviteService.acceptInvite(inviteCode, result.user);
     onNavigate(routeForUser(result.user));
   };
 
@@ -69,6 +72,11 @@ export default function Register({
       eyebrow="Onboarding"
       title="Criar conta"
     >
+      {inviteCode ? (
+        <p className="mb-4 rounded-md border border-lime/20 bg-lime/10 p-3 text-sm text-lime">
+          Convite detectado. Ao criar sua conta, o vinculo com o personal sera aplicado automaticamente.
+        </p>
+      ) : null}
       <Button className="w-full" disabled={isLoading} onClick={submitGoogle} type="button" variant="secondary">
         <Chrome size={18} />
         Continuar com Google

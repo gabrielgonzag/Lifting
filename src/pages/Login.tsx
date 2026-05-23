@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AuthFrame } from "../features/auth/AuthFrame";
+import { inviteService } from "../services/inviteService";
 import { useAuthStore } from "../store/useAuthStore";
 import type { AppRoute, User } from "../types";
 
@@ -21,6 +22,7 @@ export default function Login({
   const [asProfessional, setAsProfessional] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const inviteCode = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("invite");
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,6 +32,7 @@ export default function Login({
       setMessage(result.message ?? "Nao foi possivel entrar.");
       return;
     }
+    if (inviteCode) inviteService.acceptInvite(inviteCode, result.user);
     onNavigate(routeForUser(result.user));
   };
 
@@ -41,6 +44,7 @@ export default function Login({
       setMessage(result.message ?? "Nao foi possivel entrar com Google.");
       return;
     }
+    if (inviteCode) inviteService.acceptInvite(inviteCode, result.user);
     onNavigate(routeForUser(result.user));
   };
 

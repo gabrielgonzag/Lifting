@@ -26,18 +26,22 @@ const routes: AppRoute[] = [
   "register",
   "reset-password",
   "professional",
+  "coach",
+  "coach/students",
+  "coach/invites",
   "admin",
 ];
 const publicRoutes: AppRoute[] = ["login", "register", "reset-password"];
 const appViews: AppView[] = ["home", "plans", "workout", "progress", "settings"];
 
 const hashRoute = (): AppRoute => {
-  const route = window.location.hash.replace(/^#\/?/, "") as AppRoute;
+  const route = window.location.hash.replace(/^#\/?/, "").split("?")[0] as AppRoute;
+  if (route.startsWith("coach/students/")) return route;
   return routes.includes(route) ? route : "home";
 };
 
 const routeForUser = (user: User): AppRoute => {
-  if (user.role === "professional") return "professional";
+  if (user.role === "professional") return "coach";
   if (user.role === "admin") return "admin";
   return "home";
 };
@@ -68,7 +72,7 @@ export default function App() {
   const guardedRoute = (() => {
     if (!isAuthenticated && !publicRoutes.includes(route)) return "login";
     if (isAuthenticated && publicRoutes.includes(route) && user) return routeForUser(user);
-    if (route === "professional" && user?.role !== "professional" && user?.role !== "admin") return "home";
+    if ((route === "professional" || route.startsWith("coach")) && user?.role !== "professional" && user?.role !== "admin") return "home";
     if (route === "admin" && user?.role !== "admin") return "home";
     return route;
   })();
@@ -85,20 +89,26 @@ export default function App() {
   if (guardedRoute === "register") return <Register onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "reset-password") return <ResetPassword onNavigate={navigate} />;
 
-  const page = {
+  const pageKey = guardedRoute.startsWith("coach/students/") ? "coach" : guardedRoute;
+  const pageMap = {
     home: <Home onNavigate={navigate} />,
     plans: <Plans />,
     workout: <Workout />,
     progress: <Progress />,
     settings: <Settings />,
-    professional: <ProfessionalDashboard onNavigate={navigate} />,
+    professional: <ProfessionalDashboard onNavigate={navigate} route="coach" />,
+    coach: <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
+    "coach/students": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
+    "coach/invites": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
     admin: <AdminPlaceholder />,
-  }[guardedRoute];
+  };
+  const page = pageKey in pageMap ? pageMap[pageKey as keyof typeof pageMap] : pageMap.home;
   const activeView = appViews.includes(guardedRoute as AppView) ? (guardedRoute as AppView) : "home";
 
   return (
     <div>
       <AppShell
+        activeRoute={guardedRoute}
         activeView={activeView}
         onLogout={async () => {
           await logout();

@@ -12,16 +12,3 @@ export type User = {
   createdAt: string;
   updatedAt: string;
 };
-
-export type InviteStatus = "pending" | "accepted" | "expired" | "canceled";
-
-export type CoachStudentRelation = {
-  id: string;
-  coachId: string;
-  studentId: string;
-  status: InviteStatus;
-  inviteCode: string;
-  createdAt: string;
-  acceptedAt?: string;
-};
-
