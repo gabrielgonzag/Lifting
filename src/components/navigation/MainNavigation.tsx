@@ -1,4 +1,5 @@
-import { BarChart3, BriefcaseBusiness, Dumbbell, Home, NotebookPen, Settings2 } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Building2, Dumbbell, Home, NotebookPen, Settings2 } from "lucide-react";
+import { permissionService } from "../../services/permissionService";
 import type { AppRoute, AppView, User } from "../../types";
 import { cn } from "../../utils/cn";
 
@@ -16,15 +17,19 @@ const baseNavItems: NavItem[] = [
   { view: "settings", label: "Backup", icon: Settings2 },
 ];
 
-const canUseCoach = (user?: User) => user?.role === "professional" || user?.role === "admin";
-
-const navItemsFor = (user?: User): NavItem[] =>
-  canUseCoach(user)
-    ? [...baseNavItems.slice(0, 3), { view: "coach", label: "Coach", icon: BriefcaseBusiness }, ...baseNavItems.slice(3)]
+const navItemsFor = (user?: User): NavItem[] => {
+  const professionalItems: NavItem[] = [];
+  if (permissionService.canAccessCoach(user)) professionalItems.push({ view: "coach", label: "Coach", icon: BriefcaseBusiness });
+  if (permissionService.canAccessElite(user)) professionalItems.push({ view: "elite", label: "Elite", icon: Building2 });
+  return professionalItems.length
+    ? [...baseNavItems.slice(0, 3), ...professionalItems, ...baseNavItems.slice(3)]
     : baseNavItems;
+};
 
 const isActive = (activeRoute: AppRoute, item: NavItem) =>
-  item.view === "coach" ? activeRoute === "professional" || activeRoute.startsWith("coach") : activeRoute === item.view;
+  item.view === "coach"
+    ? activeRoute === "professional" || activeRoute.startsWith("coach")
+    : activeRoute === item.view;
 
 export function DesktopNavigation({
   activeRoute,

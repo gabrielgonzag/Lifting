@@ -7,9 +7,12 @@ import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Toast } from "../../components/common/Toast";
 import { exercises, muscleGroups } from "../../data/exercises";
+import { planService } from "../../services/planService";
 import { useAppStore } from "../../store/useAppStore";
+import { useAuthStore } from "../../store/useAuthStore";
 import type { Category, Exercise, WorkoutBlock, WorkoutPlan } from "../../types";
 import { makeId } from "../../utils/id";
+import { workoutLimitMessage } from "../../utils/validators/planValidator";
 
 const colors = ["#B7F34D", "#FF6B57", "#78D8FF", "#F5B942", "#E28CFF"];
 
@@ -21,6 +24,8 @@ const categoryLabels: Record<Category, string> = {
 export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () => void }) {
   const createPlan = useAppStore((state) => state.createPlan);
   const updatePlan = useAppStore((state) => state.updatePlan);
+  const plans = useAppStore((state) => state.plans);
+  const user = useAuthStore((state) => state.user);
   const baseBlock = plan?.blocks[0];
   const [title, setTitle] = useState(plan?.title ?? "");
   const [description, setDescription] = useState(plan?.description ?? "");
@@ -50,6 +55,10 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
 
   const savePlan = () => {
     if (!title.trim() || selectedIds.length === 0) return;
+    if (!plan && !planService.canCreateMoreWorkouts(user, plans.length)) {
+      setNotice(user ? workoutLimitMessage(user.plan) : "Entre para criar fichas.");
+      return;
+    }
     const muscleGroupsFromSelection = [...new Set(selectedExercises.map((exercise) => exercise.muscleGroup))];
     const blocks: WorkoutBlock[] = [
       {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AuthFrame } from "../features/auth/AuthFrame";
+import { validationService } from "../services/validationService";
 import { useAuthStore } from "../store/useAuthStore";
 import type { AppRoute } from "../types";
 
@@ -13,13 +14,18 @@ export default function ResetPassword({ onNavigate }: { onNavigate: (route: AppR
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) {
+      setMessage(emailValidation.message ?? "Email invalido.");
+      return;
+    }
     const result = await resetPassword(email);
     setMessage(result.message ?? "Solicitacao registrada.");
   };
 
   return (
     <AuthFrame
-      copy="A recuperacao esta pronta para trocar o mock local por um provedor real quando o backend chegar."
+      copy="Enviaremos as instrucoes de recuperacao pelo provedor seguro configurado na sua conta."
       eyebrow="Senha"
       title="Recuperar acesso"
     >
@@ -40,4 +46,3 @@ export default function ResetPassword({ onNavigate }: { onNavigate: (route: AppR
     </AuthFrame>
   );
 }
-

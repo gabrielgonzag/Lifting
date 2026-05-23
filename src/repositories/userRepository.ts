@@ -14,20 +14,34 @@ type ProfileRow = {
   id: string;
   name: string;
   email: string;
+  email_verified?: boolean | null;
   avatar_url: string | null;
   role: User["role"];
-  plan: User["plan"];
+  plan: User["plan"] | "free" | "basic" | "professional" | "enterprise";
+  status?: User["status"] | null;
   created_at: string;
   updated_at: string;
 };
+
+const normalizePlan = (plan: ProfileRow["plan"]): User["plan"] => {
+  if (plan === "free") return "entry";
+  if (plan === "basic") return "core";
+  if (plan === "professional") return "coach";
+  if (plan === "enterprise") return "elite";
+  return plan;
+};
+
+const normalizeRole = (role: ProfileRow["role"]) => role;
 
 const profileToUser = (profile: ProfileRow): User => ({
   id: profile.id,
   name: profile.name,
   email: profile.email,
+  emailVerified: profile.email_verified ?? true,
   avatarUrl: profile.avatar_url ?? undefined,
-  role: profile.role,
-  plan: profile.plan,
+  role: normalizeRole(profile.role),
+  plan: normalizePlan(profile.plan),
+  status: profile.status ?? (profile.email_verified === false ? "pending_verification" : "active"),
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
 });

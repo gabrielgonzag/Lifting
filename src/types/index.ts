@@ -1,6 +1,6 @@
 import type { BaseEntity } from "./database";
 
-export type { AuthResult, LoginInput, RegisterInput } from "./auth";
+export type { AuthResult, AuthSession, LoginInput, Permission, ProtectedRoute, RegisterInput } from "./auth";
 export type { CoachRouteView, CoachWorkspace } from "./coach";
 export type { BaseEntity } from "./database";
 export type { CoachInvite, InviteStatus } from "./invite";
@@ -14,7 +14,7 @@ export type {
   StudentProgressPoint,
   StudentWorkoutHistory,
 } from "./student";
-export type { User, UserPlan, UserRole } from "./user";
+export type { User, UserPlan, UserRole, UserStatus } from "./user";
 export type { CoachTrainingContext, CoachWorkoutSyncPayload, WorkoutSyncResult } from "./workout";
 
 export type Category = "membros superiores" | "membros inferiores";
@@ -99,7 +99,9 @@ export type AppRoute =
   | "login"
   | "register"
   | "reset-password"
+  | "verify-email"
   | "professional"
+  | "elite"
   | "admin"
   | CoachRoute;
 

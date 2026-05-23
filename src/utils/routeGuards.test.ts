@@ -6,8 +6,10 @@ const makeUser = (role: User["role"]): User => ({
   id: `${role}-user`,
   name: role,
   email: `${role}@lifting.test`,
+  emailVerified: true,
   role,
-  plan: role === "professional" ? "professional" : "free",
+  plan: role === "professional" ? "coach" : role === "admin" ? "elite" : "entry",
+  status: "active",
   createdAt: "2026-05-23T00:00:00.000Z",
   updatedAt: "2026-05-23T00:00:00.000Z",
 });
@@ -22,6 +24,7 @@ describe("route guards", () => {
   it("sends users to the right first route for their role", () => {
     expect(routeForUser(makeUser("casual"))).toBe("home");
     expect(routeForUser(makeUser("professional"))).toBe("coach");
+    expect(routeForUser({ ...makeUser("enterprise_admin"), plan: "elite" })).toBe("elite");
     expect(routeForUser(makeUser("admin"))).toBe("admin");
   });
 
@@ -30,7 +33,15 @@ describe("route guards", () => {
     expect(guardRoute({ isAuthenticated: true, route: "login", user: makeUser("casual") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "coach", user: makeUser("casual") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "coach", user: makeUser("professional") })).toBe("coach");
+    expect(guardRoute({ isAuthenticated: true, route: "elite", user: makeUser("professional") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "admin", user: makeUser("professional") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "admin", user: makeUser("admin") })).toBe("admin");
+  });
+
+  it("keeps unverified users inside the verification flow", () => {
+    const pending = { ...makeUser("casual"), emailVerified: false, status: "pending_verification" as const };
+
+    expect(guardRoute({ isAuthenticated: true, route: "home", user: pending })).toBe("verify-email");
+    expect(guardRoute({ isAuthenticated: true, route: "verify-email", user: pending })).toBe("verify-email");
   });
 });

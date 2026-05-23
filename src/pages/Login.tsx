@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AuthFrame } from "../features/auth/AuthFrame";
 import { inviteService } from "../services/inviteService";
+import { validationService } from "../services/validationService";
 import { useAuthStore } from "../store/useAuthStore";
 import type { AppRoute, User } from "../types";
 
@@ -27,6 +28,15 @@ export default function Login({
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("");
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) {
+      setMessage(emailValidation.message ?? "Email invalido.");
+      return;
+    }
+    if (!password) {
+      setMessage("Informe sua senha.");
+      return;
+    }
     const result = await login({ email, password, asProfessional });
     if (!result.ok || !result.user) {
       setMessage(result.message ?? "Nao foi possivel entrar.");

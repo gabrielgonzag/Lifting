@@ -1,11 +1,13 @@
 import { userRepository } from "../repositories/userRepository";
 import type { AuthResult, LoginInput, RegisterInput } from "../types";
+import { canAccessCoach } from "../utils/validators/permissionValidator";
+import { validationService } from "./validationService";
 import { hasSupabaseConfig, supabase } from "./databaseClient";
 
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const missingSupabaseMessage =
   "Supabase nao configurado. Verifique as variaveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
 const oauthPopupName = "lifting-google-auth";
+const duplicateEmailMessage = "Este email ja esta em uso.";
 
 const oauthRedirectUrl = () => `${window.location.origin}/`;
 const shouldUseOAuthPopup = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
@@ -64,17 +66,28 @@ export const authService = {
     return undefined;
   },
   async login({ email, password, asProfessional }: LoginInput): Promise<AuthResult> {
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
+    if (!password) return { ok: false, message: "Informe sua senha." };
+
     if (supabase) {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizeEmail(email),
+        email: emailValidation.normalized,
         password,
       });
       if (error || !data.user) return { ok: false, message: "Email ou senha invalidos." };
       const user = await userRepository.ensureSupabaseProfile(data.user.id);
       if (!user) return { ok: false, message: "Perfil Supabase nao encontrado." };
-      if (asProfessional && user.role !== "professional" && user.role !== "admin") {
+      if (user.status === "suspended") {
         await supabase.auth.signOut();
-        return { ok: false, message: "Essa conta nao possui perfil profissional." };
+        return { ok: false, message: "Esta conta esta suspensa. Fale com o suporte." };
+      }
+      if (!user.emailVerified || user.status === "pending_verification") {
+        return { ok: true, user, requiresEmailConfirmation: true, message: "Confirme seu email para liberar o app." };
+      }
+      if (asProfessional && !canAccessCoach(user)) {
+        await supabase.auth.signOut();
+        return { ok: false, message: "Essa conta nao possui acesso ao plano COACH." };
       }
       return { ok: true, user };
     }
@@ -122,20 +135,36 @@ export const authService = {
     return waitForSupabaseUser(popup);
   },
   async register(input: RegisterInput): Promise<AuthResult> {
-    const email = normalizeEmail(input.email);
+    const name = validationService.sanitizeText(input.name);
+    const emailValidation = validationService.validateEmail(input.email);
+    const passwordValidation = validationService.validatePassword(input.password);
+    if (!name) return { ok: false, message: "Informe seu nome." };
+    if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
+    if (!passwordValidation.isValid) return { ok: false, message: passwordValidation.messages[0] ?? "Use uma senha mais forte." };
+
+    const email = emailValidation.normalized;
+    const plan = input.plan ?? (input.role === "professional" ? "coach" : "entry");
     if (supabase) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: input.password,
         options: {
           data: {
-            name: input.name.trim(),
+            name,
             role: input.role,
-            plan: input.role === "professional" ? "professional" : "free",
+            plan,
           },
         },
       });
-      if (error) return { ok: false, message: error.message };
+      if (error) {
+        const lowerMessage = error.message.toLowerCase();
+        return {
+          ok: false,
+          message: lowerMessage.includes("already") || lowerMessage.includes("registered")
+            ? duplicateEmailMessage
+            : "Nao foi possivel criar sua conta agora.",
+        };
+      }
       if (!data.user) return { ok: false, message: "Nao foi possivel criar sua conta." };
       if (!data.session) {
         return {
@@ -156,8 +185,10 @@ export const authService = {
     userRepository.setSessionUserId();
   },
   async resetPassword(email: string): Promise<AuthResult> {
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
     if (supabase) {
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email));
+      const { error } = await supabase.auth.resetPasswordForEmail(emailValidation.normalized);
       return error
         ? { ok: false, message: error.message }
         : { ok: true, message: "Se houver uma conta, as instrucoes serao enviadas." };

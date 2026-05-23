@@ -35,8 +35,10 @@ const makeUser = (role: User["role"]): User => ({
   id: `${role}-user`,
   name: "Gabriel",
   email: "gabriel@lifting.test",
+  emailVerified: true,
   role,
-  plan: role === "professional" ? "professional" : "free",
+  plan: role === "professional" ? "coach" : role === "admin" ? "elite" : "entry",
+  status: "active",
   createdAt: "2026-05-23T00:00:00.000Z",
   updatedAt: "2026-05-23T00:00:00.000Z",
 });
@@ -56,14 +58,14 @@ describe("auth service", () => {
     const result = await authService.register({
       name: "Gabriel",
       email: "  GABRIEL@LIFTING.TEST ",
-      password: "strong-password",
+      password: "Strong123",
       role: "casual",
     });
 
     expect(mocks.signUp).toHaveBeenCalledWith({
       email: "gabriel@lifting.test",
-      password: "strong-password",
-      options: { data: { name: "Gabriel", role: "casual", plan: "free" } },
+      password: "Strong123",
+      options: { data: { name: "Gabriel", role: "casual", plan: "entry" } },
     });
     expect(result).toMatchObject({ ok: true, requiresEmailConfirmation: true });
   });
@@ -78,11 +80,11 @@ describe("auth service", () => {
 
     const result = await authService.login({
       email: "gabriel@lifting.test",
-      password: "strong-password",
+      password: "Strong123",
       asProfessional: true,
     });
 
-    expect(result).toMatchObject({ ok: false, message: "Essa conta nao possui perfil profissional." });
+    expect(result).toMatchObject({ ok: false, message: "Essa conta nao possui acesso ao plano COACH." });
     expect(mocks.signOut).toHaveBeenCalledTimes(1);
   });
 
@@ -97,7 +99,7 @@ describe("auth service", () => {
 
     const result = await authService.login({
       email: professional.email,
-      password: "strong-password",
+      password: "Strong123",
       asProfessional: true,
     });
 

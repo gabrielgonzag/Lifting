@@ -1,14 +1,25 @@
 import { CalendarDays, Flame, Trophy, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { FrequencyChart, StrengthChart } from "../components/charts/MetricCharts";
+import type { ComponentType, ReactNode } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { EmptyState } from "../components/common/EmptyState";
 import { SectionTitle } from "../components/common/SectionTitle";
 import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { useAppStore } from "../store/useAppStore";
+import type { PersonalRecord, WorkoutSession } from "../types";
 import { formatLongDate, inCurrentWeek } from "../utils/format";
 import { recordLabel } from "../utils/records";
+
+const StrengthChart = lazy(() =>
+  import("../components/charts/MetricCharts").then((module) => ({
+    default: module.StrengthChart as ComponentType<{ exerciseId: string; records: PersonalRecord[] }>,
+  })),
+);
+const FrequencyChart = lazy(() =>
+  import("../components/charts/MetricCharts").then((module) => ({
+    default: module.FrequencyChart as ComponentType<{ sessions: WorkoutSession[] }>,
+  })),
+);
 
 export default function Progress() {
   const sessions = useAppStore((state) => state.sessions);
@@ -77,7 +88,9 @@ export default function Progress() {
           </select>
         </label>
       </Card>
-      <StrengthChart exerciseId={exerciseId} records={records} />
+      <Suspense fallback={<Card className="h-[28rem] animate-pulse p-4" />}>
+        <StrengthChart exerciseId={exerciseId} records={records} />
+      </Suspense>
       <div className="grid gap-4 xl:grid-cols-[.82fr_1.18fr]">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           <Insight icon={<CalendarDays />} label="Ultimo treino" value={sessions[0] ? formatLongDate(sessions[0].date) : "-"} />
@@ -89,7 +102,9 @@ export default function Progress() {
             <Badge className="mt-3">{oneRmRecords.length} marcos de 1RM</Badge>
           </Card>
         </div>
-        <FrequencyChart sessions={sessions} />
+        <Suspense fallback={<Card className="h-80 animate-pulse p-4" />}>
+          <FrequencyChart sessions={sessions} />
+        </Suspense>
       </div>
     </div>
   );

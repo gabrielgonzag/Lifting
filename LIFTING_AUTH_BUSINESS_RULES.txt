@@ -1,0 +1,119 @@
+LIFTING - AUTH, PLANOS, PERMISSOES E SEGURANCA
+
+Objetivo
+Criar uma base de autenticacao robusta, escalavel e segura para usuarios reais, planos pagos, painel profissional,
+academias, backend real, pagamentos futuros, roles, permissoes e rotas protegidas.
+
+Roles
+- casual: usuario individual comum.
+- professional: personal trainer com acesso ao painel profissional quando possui plano COACH ou superior.
+- enterprise_admin: gestor institucional do plano ELITE.
+- instructor: instrutor vinculado a uma estrutura ELITE.
+- admin: operador interno com acesso total.
+
+Plans
+- entry: plano gratuito individual.
+- core: plano premium individual.
+- coach: plano profissional para personal trainer.
+- elite: plano empresarial para academias e equipes.
+
+Separacao entre role e plan
+Role define o tipo operacional do usuario.
+Plan define recursos, limites e nivel comercial.
+Exemplo valido: role professional + plan coach.
+
+ENTRY
+Pode criar conta, criar ate 20 fichas, registrar treinos, salvar cargas e repeticoes, acessar progresso basico,
+graficos basicos, historico simples e editar proprias fichas.
+Nao pode acessar painel profissional, gerenciar alunos, criar convites, acessar analytics avancados, exportar PDF
+premium, backup completo, realtime ou colaboracao.
+Limite: maximo de 20 fichas.
+
+CORE
+Pode tudo do ENTRY, fichas ilimitadas, historico completo, graficos completos, PR avancado, exportacao PDF premium,
+backup/importacao completa, analytics avancados e todos os recursos individuais.
+Nao pode acessar painel profissional nem gerenciar alunos.
+
+COACH
+Pode tudo do CORE, acessar painel profissional, gerenciar alunos, criar convites, enviar fichas, editar fichas dos
+alunos, adicionar observacoes, visualizar frequencia, evolucao, graficos e historico completo dos alunos.
+Limite inicial: ate 10 alunos ativos inclusos.
+Ao atingir o limite, mostrar mensagem de upgrade ou expansao de alunos.
+
+ELITE
+Pode tudo do COACH, multiplos instrutores, multiplos coaches, multiplas unidades, painel institucional, analytics
+avancados, gerenciamento de coaches, alunos, equipes, unidades e permissoes avancadas.
+
+Rotas
+Usuario deslogado acessa somente login, cadastro e recuperacao de senha.
+Usuario logado nao acessa login/cadastro; deve ser redirecionado pelo plano/role.
+ENTRY e CORE entram no app principal.
+COACH entra em /coach.
+ELITE entra em /elite.
+ADMIN entra em /admin.
+
+Protecao de rotas
+/coach exige plano COACH ou ELITE e role professional, instructor, enterprise_admin ou admin.
+/elite exige plano ELITE ou admin.
+/admin exige role admin.
+Usuarios sem permissao devem ser redirecionados e nunca visualizar conteudo protegido.
+Mesmo que a UI esconda botoes, guards e services precisam validar role, plan, status, emailVerified e ownership.
+
+Status de usuario
+- pending_verification: conta criada, aguardando confirmacao de email.
+- active: conta confirmada e liberada.
+- suspended: conta bloqueada por suporte/admin.
+Usuarios pending_verification ou sem emailVerified nao acessam o app completo.
+
+Senha
+Obrigatorio:
+- minimo 8 caracteres.
+- pelo menos 1 letra maiuscula.
+- pelo menos 1 numero.
+Recomendado:
+- caractere especial: ! @ # $ % & * _ -
+Forca:
+- fraca: nao cumpre os requisitos obrigatorios.
+- media: cumpre os requisitos obrigatorios sem caractere especial.
+- forte: cumpre os requisitos obrigatorios e possui caractere especial.
+
+Email
+Validar sintaxe, caracteres invalidos, dominio basico e duplicidade.
+Preparado para verificacao real de existencia e confirmacao por email via provedor.
+Ao criar conta, Supabase envia verificacao quando configurado.
+
+Seguranca
+Sanitizar inputs de texto.
+Normalizar email.
+Usar mensagens seguras, sem detalhes tecnicos do backend.
+Preparar rate limiting no backend.
+Preparar JWT, Supabase Auth, Firebase Auth, OAuth Google e API REST.
+Nunca confiar apenas na UI.
+Nunca aceitar role/plan privilegiado sem validacao server-side em producao.
+
+Arquitetura
+Regras ficam centralizadas em:
+- src/services/authService.ts
+- src/services/permissionService.ts
+- src/services/planService.ts
+- src/services/validationService.ts
+- src/guards/routeGuards.ts
+- src/utils/validators/passwordValidator.ts
+- src/utils/validators/emailValidator.ts
+- src/utils/validators/permissionValidator.ts
+- src/utils/validators/planValidator.ts
+
+Helpers principais
+- canAccessCoach()
+- canAccessElite()
+- canInviteStudents()
+- canManageStudents()
+- canCreateMoreWorkouts()
+- canAccessAdvancedAnalytics()
+
+Banco e backend
+Profiles devem conter:
+id, name, email, email_verified, avatar_url, role, plan, status, created_at, updated_at.
+As tabelas principais devem manter RLS e ownership por user_id.
+Role spoofing deve ser bloqueado por trigger/politicas no banco.
+Plan upgrade real deve ser controlado por backend/pagamentos, nao pelo client.

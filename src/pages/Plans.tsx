@@ -7,14 +7,19 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { PlanEditor } from "../features/workoutPlans/PlanEditor";
+import { planService } from "../services/planService";
 import { useAppStore } from "../store/useAppStore";
+import { useAuthStore } from "../store/useAuthStore";
 import type { WorkoutPlan } from "../types";
+import { workoutLimitMessage } from "../utils/validators/planValidator";
 
 export default function Plans() {
   const plans = useAppStore((state) => state.plans);
   const duplicatePlan = useAppStore((state) => state.duplicatePlan);
   const deletePlan = useAppStore((state) => state.deletePlan);
+  const user = useAuthStore((state) => state.user);
   const [editorPlan, setEditorPlan] = useState<WorkoutPlan | "new" | null>(null);
+  const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("updated");
   const [group, setGroup] = useState("Todos");
@@ -31,12 +36,35 @@ export default function Plans() {
         : new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
     );
   }, [group, plans, query, sort]);
+  const canCreate = planService.canCreateMoreWorkouts(user, plans.length);
+  const createBlockedMessage = user ? workoutLimitMessage(user.plan) : "Entre para criar fichas.";
+
+  const showNotice = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 2200);
+  };
+
+  const openNewPlan = () => {
+    if (!canCreate) {
+      showNotice(createBlockedMessage);
+      return;
+    }
+    setEditorPlan("new");
+  };
+
+  const duplicate = (id: string) => {
+    if (!canCreate) {
+      showNotice(createBlockedMessage);
+      return;
+    }
+    duplicatePlan(id);
+  };
 
   return (
     <>
       <SectionTitle
         action={
-          <Button onClick={() => setEditorPlan("new")}>
+          <Button onClick={openNewPlan}>
             <Plus size={18} />
             Criar ficha
           </Button>
@@ -62,7 +90,7 @@ export default function Plans() {
       </div>
       {filteredPlans.length === 0 ? (
         <EmptyState
-          action={<Button onClick={() => setEditorPlan("new")}>Nova ficha</Button>}
+          action={<Button onClick={openNewPlan}>Nova ficha</Button>}
           description="Monte um bloco com exercicios, cores e observacoes do jeito que voce treina."
           icon={<Plus />}
           title="Nenhuma ficha encontrada"
@@ -81,7 +109,7 @@ export default function Plans() {
                   <Button aria-label="Editar ficha" onClick={() => setEditorPlan(plan)} size="icon" title="Editar" variant="ghost">
                     <Pencil size={17} />
                   </Button>
-                  <Button aria-label="Duplicar ficha" onClick={() => duplicatePlan(plan.id)} size="icon" title="Duplicar" variant="ghost">
+                  <Button aria-label="Duplicar ficha" onClick={() => duplicate(plan.id)} size="icon" title="Duplicar" variant="ghost">
                     <Copy size={17} />
                   </Button>
                   <Button aria-label="Excluir ficha" onClick={() => deletePlan(plan.id)} size="icon" title="Excluir" variant="danger">
@@ -101,6 +129,11 @@ export default function Plans() {
       )}
       {editorPlan ? (
         <PlanEditor onClose={() => setEditorPlan(null)} plan={editorPlan === "new" ? undefined : editorPlan} />
+      ) : null}
+      {notice ? (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-md border border-lime/20 bg-zinc-950 px-4 py-3 text-sm text-lime shadow-lift">
+          {notice}
+        </div>
       ) : null}
     </>
   );

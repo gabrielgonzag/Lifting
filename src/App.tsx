@@ -4,17 +4,19 @@ import { AppShell } from "./components/layout/AppShell";
 import { useAppStore } from "./store/useAppStore";
 import { useAuthStore } from "./store/useAuthStore";
 import type { AppRoute, AppView } from "./types";
-import { appViews, guardRoute, parseHashRoute, routeForUser } from "./utils/routeGuards";
+import { appViews, guardRoute, parseHashRoute, routeForUser } from "./guards/routeGuards";
 
 const AdminPlaceholder = lazy(() => import("./pages/AdminPlaceholder"));
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
+const ElitePlaceholder = lazy(() => import("./pages/ElitePlaceholder"));
 const Plans = lazy(() => import("./pages/Plans"));
 const ProfessionalDashboard = lazy(() => import("./pages/ProfessionalDashboard"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Register = lazy(() => import("./pages/Register"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Settings = lazy(() => import("./pages/Settings"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Workout = lazy(() => import("./pages/Workout"));
 
 const hashRoute = (): AppRoute => parseHashRoute(window.location.hash);
@@ -55,6 +57,7 @@ export default function App() {
   if (guardedRoute === "login") return <Login onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "register") return <Register onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "reset-password") return <ResetPassword onNavigate={navigate} />;
+  if (guardedRoute === "verify-email") return <VerifyEmail onNavigate={navigate} />;
 
   const pageKey = guardedRoute.startsWith("coach/students/") ? "coach" : guardedRoute;
   const pageMap = {
@@ -67,6 +70,7 @@ export default function App() {
     coach: <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
     "coach/students": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
     "coach/invites": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
+    elite: <ElitePlaceholder />,
     admin: <AdminPlaceholder />,
   };
   const page = pageKey in pageMap ? pageMap[pageKey as keyof typeof pageMap] : pageMap.home;
