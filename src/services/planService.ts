@@ -1,5 +1,5 @@
 import type { User, UserPlan } from "../types";
-import { canCreateMoreWorkouts, hasPlanAtLeast, workoutPlanLimit } from "../utils/validators/planValidator";
+import { activeStudentLimit, canCreateMoreWorkouts, canInviteMoreStudents, hasPlanAtLeast, workoutPlanLimit } from "../utils/validators/planValidator";
 
 export const planService = {
   hasAtLeast(user: User | undefined | null, plan: UserPlan) {
@@ -8,7 +8,13 @@ export const planService = {
   workoutLimit(plan: UserPlan) {
     return workoutPlanLimit(plan);
   },
+  activeStudentLimit(plan: UserPlan) {
+    return activeStudentLimit(plan);
+  },
   canCreateMoreWorkouts(user: User | undefined | null, currentCount: number) {
     return canCreateMoreWorkouts(user, currentCount);
+  },
+  canInviteMoreStudents(user: User | undefined | null, activeStudentCount: number) {
+    return canInviteMoreStudents(user, activeStudentCount);
   },
 };

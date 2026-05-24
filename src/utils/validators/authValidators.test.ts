@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { User } from "../../types";
 import { validateEmail } from "./emailValidator";
 import { canAccessCoach, canAccessElite, canInviteStudents, hasPermission } from "./permissionValidator";
-import { canCreateMoreWorkouts, workoutPlanLimit } from "./planValidator";
+import { activeStudentLimit, canCreateMoreWorkouts, canInviteMoreStudents, workoutPlanLimit } from "./planValidator";
 import { validatePassword } from "./passwordValidator";
 
 const user = (plan: User["plan"], role: User["role"] = "casual"): User => ({
@@ -36,6 +36,10 @@ describe("auth business validators", () => {
     expect(canCreateMoreWorkouts(user("entry"), 19)).toBe(true);
     expect(canCreateMoreWorkouts(user("entry"), 20)).toBe(false);
     expect(canCreateMoreWorkouts(user("core"), 200)).toBe(true);
+    expect(activeStudentLimit("coach")).toBe(10);
+    expect(canInviteMoreStudents(user("coach", "professional"), 9)).toBe(true);
+    expect(canInviteMoreStudents(user("coach", "professional"), 10)).toBe(false);
+    expect(canInviteMoreStudents(user("elite", "enterprise_admin"), 100)).toBe(true);
     expect(hasPermission(user("entry"), "export:premium_pdf")).toBe(false);
     expect(hasPermission(user("core"), "export:premium_pdf")).toBe(true);
   });

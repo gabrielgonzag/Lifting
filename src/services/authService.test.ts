@@ -4,6 +4,7 @@ import type { User } from "../types";
 const mocks = vi.hoisted(() => ({
   ensureSupabaseProfile: vi.fn(),
   getSession: vi.fn(),
+  resend: vi.fn(),
   resetPasswordForEmail: vi.fn(),
   setSessionUserId: vi.fn(),
   signInWithPassword: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock("./databaseClient", () => ({
   supabase: {
     auth: {
       getSession: mocks.getSession,
+      resend: mocks.resend,
       resetPasswordForEmail: mocks.resetPasswordForEmail,
       signInWithPassword: mocks.signInWithPassword,
       signOut: mocks.signOut,
@@ -86,6 +88,43 @@ describe("auth service", () => {
 
     expect(result).toMatchObject({ ok: false, message: "Essa conta nao possui acesso ao plano COACH." });
     expect(mocks.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks login before email confirmation", async () => {
+    const { authService } = await import("./authService");
+    mocks.signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: { message: "Email not confirmed" },
+    });
+
+    const result = await authService.login({
+      email: "gabriel@lifting.test",
+      password: "Strong123",
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      email: "gabriel@lifting.test",
+      requiresEmailConfirmation: true,
+      message: "Confirme seu e-mail antes de entrar.",
+    });
+  });
+
+  it("resends signup confirmation email through Supabase", async () => {
+    const { authService } = await import("./authService");
+    mocks.resend.mockResolvedValue({ error: null });
+
+    const result = await authService.resendEmailConfirmation("  GABRIEL@LIFTING.TEST ");
+
+    expect(mocks.resend).toHaveBeenCalledWith({
+      type: "signup",
+      email: "gabriel@lifting.test",
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      email: "gabriel@lifting.test",
+      requiresEmailConfirmation: true,
+    });
   });
 
   it("allows professional login for a professional profile", async () => {

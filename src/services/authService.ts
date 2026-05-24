@@ -8,6 +8,19 @@ const missingSupabaseMessage =
   "Supabase nao configurado. Verifique as variaveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
 const oauthPopupName = "lifting-google-auth";
 const duplicateEmailMessage = "Este email ja esta em uso.";
+const pendingConfirmationMessage = "Conta criada. Verifique seu e-mail para confirmar o cadastro.";
+const emailSendErrorMessage = "Nao foi possivel enviar o e-mail de confirmacao agora. Verifique a configuracao SMTP.";
+
+const safeSignupError = (message: string) => {
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes("already") || lowerMessage.includes("registered") || lowerMessage.includes("exists")) {
+    return duplicateEmailMessage;
+  }
+  if (lowerMessage.includes("smtp") || lowerMessage.includes("email") || lowerMessage.includes("mail")) {
+    return emailSendErrorMessage;
+  }
+  return "Nao foi possivel criar sua conta agora.";
+};
 
 const oauthRedirectUrl = () => `${window.location.origin}/`;
 const shouldUseOAuthPopup = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
@@ -75,7 +88,18 @@ export const authService = {
         email: emailValidation.normalized,
         password,
       });
-      if (error || !data.user) return { ok: false, message: "Email ou senha invalidos." };
+      if (error || !data.user) {
+        const lowerMessage = error?.message.toLowerCase() ?? "";
+        if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("confirm")) {
+          return {
+            ok: false,
+            email: emailValidation.normalized,
+            message: "Confirme seu e-mail antes de entrar.",
+            requiresEmailConfirmation: true,
+          };
+        }
+        return { ok: false, message: "Email ou senha invalidos." };
+      }
       const user = await userRepository.ensureSupabaseProfile(data.user.id);
       if (!user) return { ok: false, message: "Perfil Supabase nao encontrado." };
       if (user.status === "suspended") {
@@ -83,7 +107,13 @@ export const authService = {
         return { ok: false, message: "Esta conta esta suspensa. Fale com o suporte." };
       }
       if (!user.emailVerified || user.status === "pending_verification") {
-        return { ok: true, user, requiresEmailConfirmation: true, message: "Confirme seu email para liberar o app." };
+        await supabase.auth.signOut();
+        return {
+          ok: false,
+          email: user.email,
+          requiresEmailConfirmation: true,
+          message: "Confirme seu e-mail antes de entrar.",
+        };
       }
       if (asProfessional && !canAccessCoach(user)) {
         await supabase.auth.signOut();
@@ -156,27 +186,51 @@ export const authService = {
           },
         },
       });
-      if (error) {
-        const lowerMessage = error.message.toLowerCase();
-        return {
-          ok: false,
-          message: lowerMessage.includes("already") || lowerMessage.includes("registered")
-            ? duplicateEmailMessage
-            : "Nao foi possivel criar sua conta agora.",
-        };
-      }
+      if (error) return { ok: false, email, message: safeSignupError(error.message) };
       if (!data.user) return { ok: false, message: "Nao foi possivel criar sua conta." };
+      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return { ok: false, email, message: duplicateEmailMessage };
+      }
       if (!data.session) {
         return {
           ok: true,
-          message: "Conta criada. Confirme seu email para entrar.",
+          email,
+          message: pendingConfirmationMessage,
           requiresEmailConfirmation: true,
         };
       }
       const user = await userRepository.ensureSupabaseProfile(data.user.id);
+      if (!user?.emailVerified || user.status === "pending_verification") {
+        await supabase.auth.signOut();
+        return {
+          ok: true,
+          email,
+          message: pendingConfirmationMessage,
+          requiresEmailConfirmation: true,
+        };
+      }
       return user ? { ok: true, user } : { ok: false, message: "Conta criada. Entre novamente." };
     }
     return { ok: false, message: missingSupabaseMessage };
+  },
+  async resendEmailConfirmation(email: string): Promise<AuthResult> {
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
+    if (!supabase) return { ok: false, message: missingSupabaseMessage };
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: emailValidation.normalized,
+    });
+
+    return error
+      ? { ok: false, email: emailValidation.normalized, message: safeSignupError(error.message) }
+      : {
+          ok: true,
+          email: emailValidation.normalized,
+          message: "Enviamos um novo e-mail de confirmacao.",
+          requiresEmailConfirmation: true,
+        };
   },
   async logout() {
     if (supabase) {

@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, BriefcaseBusiness, Eye, EyeOff, KeyRound, LoaderCircle, Mail } from "lucide-react";
+import { AlertCircle, ArrowRight, BriefcaseBusiness, Eye, EyeOff, KeyRound, LoaderCircle, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -17,12 +17,14 @@ export default function Login({
 }) {
   const login = useAuthStore((state) => state.login);
   const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
+  const resendEmailConfirmation = useAuthStore((state) => state.resendEmailConfirmation);
   const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [asProfessional, setAsProfessional] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
   const inviteCode = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("invite");
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -39,11 +41,19 @@ export default function Login({
     }
     const result = await login({ email, password, asProfessional });
     if (!result.ok || !result.user) {
+      if (result.requiresEmailConfirmation) setPendingEmail(result.email ?? emailValidation.normalized);
       setMessage(result.message ?? "Nao foi possivel entrar.");
       return;
     }
     if (inviteCode) inviteService.acceptInvite(inviteCode, result.user);
     onNavigate(routeForUser(result.user));
+  };
+
+  const resendConfirmation = async () => {
+    const targetEmail = pendingEmail || email;
+    const result = await resendEmailConfirmation(targetEmail);
+    if (result.ok && result.email) setPendingEmail(result.email);
+    setMessage(result.message ?? (result.ok ? "E-mail reenviado." : "Nao foi possivel reenviar agora."));
   };
 
   const submitGoogle = async () => {
@@ -140,6 +150,13 @@ export default function Login({
               <AlertCircle className="mt-0.5 shrink-0" size={16} />
               {message}
             </p>
+          ) : null}
+
+          {pendingEmail ? (
+            <Button disabled={isLoading} onClick={resendConfirmation} type="button" variant="secondary">
+              <Send size={17} />
+              Reenviar confirmacao
+            </Button>
           ) : null}
 
           <Button className="min-h-12 w-full" disabled={isLoading} type="submit">

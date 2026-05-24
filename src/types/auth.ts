@@ -19,6 +19,7 @@ export type AuthResult = {
   ok: boolean;
   user?: User;
   message?: string;
+  email?: string;
   requiresEmailConfirmation?: boolean;
   redirecting?: boolean;
 };

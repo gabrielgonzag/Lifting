@@ -37,7 +37,7 @@ const profileToUser = (profile: ProfileRow): User => ({
   id: profile.id,
   name: profile.name,
   email: profile.email,
-  emailVerified: profile.email_verified ?? true,
+  emailVerified: profile.email_verified ?? false,
   avatarUrl: profile.avatar_url ?? undefined,
   role: normalizeRole(profile.role),
   plan: normalizePlan(profile.plan),

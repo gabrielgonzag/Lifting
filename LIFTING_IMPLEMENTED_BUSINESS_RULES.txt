@@ -1,0 +1,431 @@
+LIFTING - REGRAS DE NEGOCIO IMPLEMENTADAS
+
+Este documento explica as regras de negocio ja implementadas no aplicativo LIFTING para autenticacao, planos,
+permissoes, rotas protegidas, validacoes e seguranca.
+
+1. MODELO DE USUARIO
+
+O usuario possui os seguintes campos principais:
+
+- id
+- name
+- email
+- emailVerified
+- avatarUrl
+- role
+- plan
+- status
+- createdAt
+- updatedAt
+
+O campo role representa o papel operacional do usuario.
+O campo plan representa o plano comercial e os recursos disponiveis.
+Esses dois conceitos foram separados para permitir crescimento futuro do produto.
+
+Exemplo:
+
+role = professional
+plan = coach
+
+2. ROLES IMPLEMENTADAS
+
+casual
+Usuario comum do aplicativo.
+
+professional
+Personal trainer ou profissional de educacao fisica.
+
+enterprise_admin
+Administrador institucional preparado para o plano ELITE.
+
+instructor
+Instrutor vinculado a uma estrutura ELITE.
+
+admin
+Usuario interno com acesso total.
+
+3. PLANOS IMPLEMENTADOS
+
+ENTRY
+Plano gratuito individual.
+
+Pode:
+- criar conta
+- criar ate 20 fichas
+- registrar treinos
+- salvar cargas e repeticoes
+- acessar progresso basico
+- acessar historico simples
+- editar proprias fichas
+
+Nao pode:
+- acessar painel profissional
+- criar convites
+- gerenciar alunos
+- exportar PDF premium
+- usar backup/importacao completa
+- acessar recursos avancados
+
+CORE
+Plano premium individual.
+
+Pode:
+- tudo do ENTRY
+- criar fichas ilimitadas
+- usar backup/importacao completa
+- exportar PDF premium
+- acessar historico completo
+- acessar graficos e recursos individuais avancados
+
+Nao pode:
+- acessar painel profissional
+- gerenciar alunos
+- criar convites
+
+COACH
+Plano profissional.
+
+Pode:
+- tudo do CORE
+- acessar painel profissional
+- gerenciar alunos
+- criar convites
+- editar fichas de alunos
+- enviar fichas
+- adicionar observacoes
+- acompanhar frequencia, historico e evolucao dos alunos
+
+Limite:
+- ate 10 alunos ativos
+
+Quando o limite e atingido, o sistema bloqueia novos convites e mostra mensagem de upgrade/expansao.
+
+ELITE
+Plano empresarial preparado para academias e equipes.
+
+Pode:
+- tudo do COACH
+- acessar painel ELITE
+- gerenciar estrutura institucional futura
+- preparar multiplos instrutores, unidades e permissoes avancadas
+
+4. STATUS DA CONTA
+
+pending_verification
+Conta criada, aguardando confirmacao de email.
+
+active
+Conta verificada e liberada.
+
+suspended
+Conta suspensa.
+
+Usuarios sem email verificado ou com status pending_verification sao enviados para a tela de verificacao e nao acessam
+o app completo.
+
+Usuarios suspensos nao recebem permissoes.
+
+5. ROTAS PROTEGIDAS
+
+As rotas sao validadas em src/guards/routeGuards.ts.
+
+Usuarios deslogados:
+- acessam login
+- acessam cadastro
+- acessam recuperacao de senha
+- sao redirecionados para login ao tentar acessar area privada
+
+Usuarios logados:
+- nao acessam login/cadastro
+- sao redirecionados conforme role e plan
+
+Redirecionamento por perfil:
+
+ENTRY e CORE:
+- home
+
+COACH:
+- coach
+
+ELITE:
+- elite
+
+ADMIN:
+- admin
+
+Regras de acesso:
+
+/coach
+Exige permissao coach:access.
+Na pratica, exige plano COACH ou ELITE e role professional, instructor, enterprise_admin ou admin.
+
+/elite
+Exige plano ELITE ou admin.
+
+/admin
+Exige role admin.
+
+6. PERMISSOES IMPLEMENTADAS
+
+As permissoes ficam centralizadas em:
+
+src/utils/validators/permissionValidator.ts
+src/services/permissionService.ts
+
+Permissoes principais:
+
+- workout:create_limited
+- workout:create_unlimited
+- workout:register
+- progress:basic
+- progress:advanced
+- history:basic
+- history:complete
+- export:premium_pdf
+- backup:complete
+- coach:access
+- coach:manage_students
+- coach:create_invites
+- coach:edit_student_workouts
+- coach:view_student_analytics
+- elite:access
+- elite:manage_units
+- elite:manage_instructors
+- admin:access
+
+Helpers implementados:
+
+- canAccessCoach()
+- canAccessElite()
+- canInviteStudents()
+- canManageStudents()
+- canCreateMoreWorkouts()
+- canInviteMoreStudents()
+- canAccessAdvancedAnalytics()
+
+7. LIMITES IMPLEMENTADOS
+
+Limite de fichas:
+
+ENTRY:
+- maximo de 20 fichas
+
+CORE, COACH e ELITE:
+- fichas ilimitadas
+
+O limite e validado na criacao e duplicacao de fichas.
+
+Limite de alunos:
+
+COACH:
+- maximo de 10 alunos ativos
+
+ELITE:
+- alunos ilimitados
+
+O limite e validado antes da criacao de convites.
+
+8. VALIDACAO DE SENHA
+
+Implementada em:
+
+src/utils/validators/passwordValidator.ts
+
+Regras obrigatorias:
+
+- minimo 8 caracteres
+- pelo menos 1 letra maiuscula
+- pelo menos 1 numero
+
+Caractere especial recomendado:
+
+! @ # $ % & * _ -
+
+Forca da senha:
+
+fraca
+Nao cumpre os requisitos obrigatorios.
+
+media
+Cumpre os requisitos obrigatorios, mas nao possui caractere especial.
+
+forte
+Cumpre os requisitos obrigatorios e possui caractere especial.
+
+O cadastro exibe checklist visual em tempo real.
+
+9. VALIDACAO DE EMAIL
+
+Implementada em:
+
+src/utils/validators/emailValidator.ts
+
+O sistema valida:
+
+- email vazio
+- formato invalido
+- caracteres invalidos
+- dominio basico invalido
+- duplicidade tratada via Supabase/Auth backend
+
+O email e normalizado para lowercase antes de login, cadastro e recuperacao de senha.
+
+10. SANITIZACAO DE INPUTS
+
+Implementada em:
+
+src/utils/validators/inputSanitizer.ts
+
+O sistema sanitiza textos basicos removendo sinais perigosos como < e > e normalizando espacos.
+
+O nome do usuario e sanitizado no cadastro.
+
+11. LOGIN, CADASTRO E RECUPERACAO
+
+Implementados em:
+
+src/services/authService.ts
+src/store/useAuthStore.ts
+
+Login:
+- valida email
+- valida senha preenchida
+- usa Supabase Auth quando configurado
+- bloqueia conta suspensa
+- bloqueia acesso profissional quando o usuario nao possui permissao COACH
+
+Cadastro:
+- valida nome
+- valida email
+- valida senha forte
+- define plan entry para usuario casual
+- define plan coach para usuario professional
+- trata conta pendente de verificacao
+- mostra mensagem segura para email duplicado
+
+Recuperacao:
+- valida email
+- envia solicitacao pelo Supabase Auth
+- usa mensagem segura sem expor detalhes tecnicos
+
+12. BACKUP E EXPORTACAO
+
+Implementado em:
+
+src/pages/Settings.tsx
+
+PDF premium:
+- exige permissao export:premium_pdf
+- na pratica exige plano CORE ou superior
+
+Backup/importacao completa:
+- exige permissao backup:complete
+- na pratica exige plano CORE ou superior
+
+ENTRY ve a area, mas os botoes ficam bloqueados e o sistema tambem valida antes de executar.
+
+13. PAINEL PROFISSIONAL
+
+Implementado em:
+
+src/pages/ProfessionalDashboard.tsx
+src/services/inviteService.ts
+
+Regras:
+
+- somente usuarios com permissao coach:access entram no painel
+- criacao de convites exige permissao coach:create_invites
+- plano COACH respeita limite de 10 alunos ativos
+- plano ELITE nao possui limite de alunos ativos
+- service de convite tambem valida permissao e limite quando recebe contexto do usuario
+
+14. BANCO E SUPABASE
+
+Migrations criadas:
+
+supabase/migrations/20260523033000_add_lifting_plan_roles.sql
+supabase/migrations/20260523033100_apply_lifting_auth_business_rules.sql
+supabase/migrations/20260523143000_harden_public_signup_roles.sql
+
+Essas migrations:
+
+- adicionam novos valores de role
+- adicionam novos valores de plan
+- adicionam status do usuario
+- adicionam email_verified no profile
+- ajustam defaults para entry
+- migram planos antigos para os novos nomes
+- atualizam ensure_profile()
+- atualizam handle_new_user()
+- protegem role/plan/status/email_verified contra alteracao direta pelo proprio usuario
+- endurecem signup publico contra spoofing de role/plan privilegiado
+
+15. PROTECAO CONTRA ROLE SPOOFING
+
+O client nao deve ser fonte de verdade para permissoes privilegiadas.
+
+No Supabase, o signup publico aceita apenas:
+
+- casual com entry
+- professional com coach
+
+Valores como admin, elite, enterprise_admin e instructor nao sao aceitos pelo fluxo publico.
+
+Esses niveis ficam preparados para serem concedidos futuramente por backend, painel interno, pagamento ou processo
+administrativo.
+
+16. TESTES
+
+Existem testes unitarios cobrindo:
+
+- validacao de senha
+- validacao de email
+- permissoes por plano
+- limite de fichas
+- limite de alunos
+- protecao de rotas
+- usuarios nao verificados
+- login profissional
+- cadastro com confirmacao de email
+- recuperacao de senha
+- calculo de PR e 1RM
+- isolamento de dados por userId no repositorio de treino
+
+17. ARQUITETURA
+
+As regras nao ficam espalhadas nos componentes.
+
+Camadas principais:
+
+- services
+- repositories
+- store
+- guards
+- validators
+- types
+
+Componentes usam services/guards/validators para tomar decisoes.
+
+18. PONTOS PREPARADOS PARA FUTURO
+
+O sistema esta preparado para:
+
+- backend real
+- JWT
+- Supabase Auth
+- OAuth Google
+- pagamentos
+- upgrade de plano
+- painel profissional completo
+- painel ELITE
+- administracao interna
+- rate limiting no backend
+- verificacao real de email
+- permissao server-side mais granular
+
+19. OBSERVACAO IMPORTANTE
+
+As permissoes no frontend melhoram UX e protegem a navegacao, mas a seguranca definitiva deve continuar sendo aplicada
+no backend e no banco.
+
+O projeto ja prepara essa camada com Supabase RLS, ownership por user_id, triggers e funcoes de perfil.

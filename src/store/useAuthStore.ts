@@ -13,6 +13,7 @@ type AuthState = {
   register: (input: RegisterInput) => ReturnType<typeof authService.register>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => ReturnType<typeof authService.resetPassword>;
+  resendEmailConfirmation: (email: string) => ReturnType<typeof authService.resendEmailConfirmation>;
   updateProfile: (profile: Partial<Pick<User, "name" | "avatarUrl">>) => User | undefined;
 };
 
@@ -29,8 +30,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ isLoading: true });
     const result = await authService.login(input);
     set({
-      user: result.user,
-      isAuthenticated: Boolean(result.user),
+      user: result.requiresEmailConfirmation ? undefined : result.user,
+      isAuthenticated: Boolean(result.user && !result.requiresEmailConfirmation),
       isLoading: false,
     });
     return result;
@@ -49,8 +50,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ isLoading: true });
     const result = await authService.register(input);
     set({
-      user: result.user,
-      isAuthenticated: Boolean(result.user),
+      user: result.requiresEmailConfirmation ? undefined : result.user,
+      isAuthenticated: Boolean(result.user && !result.requiresEmailConfirmation),
       isLoading: false,
     });
     return result;
@@ -60,6 +61,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ user: undefined, isAuthenticated: false, isLoading: false });
   },
   resetPassword: (email) => authService.resetPassword(email),
+  resendEmailConfirmation: (email) => authService.resendEmailConfirmation(email),
   updateProfile: (profile) => {
     const user = get().user;
     if (!user) return undefined;

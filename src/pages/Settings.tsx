@@ -4,20 +4,29 @@ import { SectionTitle } from "../components/common/SectionTitle";
 import { Toast } from "../components/common/Toast";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import { permissionService } from "../services/permissionService";
 import { printFitnessReport } from "../services/pdfReport";
 import { useAppStore } from "../store/useAppStore";
+import { useAuthStore } from "../store/useAuthStore";
 import type { AppSnapshot } from "../types";
 
 export default function Settings() {
   const store = useAppStore();
+  const user = useAuthStore((state) => state.user);
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const canExportPdf = permissionService.has(user, "export:premium_pdf");
+  const canUseCompleteBackup = permissionService.has(user, "backup:complete");
   const toast = (value: string) => {
     setMessage(value);
     window.setTimeout(() => setMessage(""), 2100);
   };
 
   const exportJson = () => {
+    if (!canUseCompleteBackup) {
+      toast("Backup completo faz parte do plano CORE.");
+      return;
+    }
     const payload = JSON.stringify(
       { plans: store.plans, sessions: store.sessions, personalRecords: store.personalRecords },
       null,
@@ -35,6 +44,10 @@ export default function Settings() {
 
   const importData = async (file?: File) => {
     if (!file) return;
+    if (!canUseCompleteBackup) {
+      toast("Importacao completa faz parte do plano CORE.");
+      return;
+    }
     try {
       const data = JSON.parse(await file.text()) as AppSnapshot;
       toast(store.importSnapshot(data) ? "Backup importado." : "JSON invalido para CONTENT.ENV.");
@@ -59,7 +72,14 @@ export default function Settings() {
         </p>
         <Button
           className="mt-4"
-          onClick={() => toast(printFitnessReport(store) ? "Relatorio pronto para salvar em PDF." : "Permita a janela do relatorio.")}
+          disabled={!canExportPdf}
+          onClick={() => {
+            if (!canExportPdf) {
+              toast("PDF premium faz parte do plano CORE.");
+              return;
+            }
+            toast(printFitnessReport(store) ? "Relatorio pronto para salvar em PDF." : "Permita a janela do relatorio.");
+          }}
         >
           <FileText size={18} />
           Exportar PDF
@@ -67,13 +87,15 @@ export default function Settings() {
       </Card>
       <Card className="p-4 sm:p-5">
         <h3 className="text-lg font-semibold">Backup</h3>
-        <p className="mt-1 text-sm text-zinc-400">Leve fichas, historico e PRs em JSON.</p>
+        <p className="mt-1 text-sm text-zinc-400">
+          Leve fichas, historico e PRs em JSON. Backup completo exige plano CORE.
+        </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button onClick={exportJson} variant="secondary">
+          <Button disabled={!canUseCompleteBackup} onClick={exportJson} variant="secondary">
             <Download size={18} />
             Exportar JSON
           </Button>
-          <Button onClick={() => inputRef.current?.click()} variant="secondary">
+          <Button disabled={!canUseCompleteBackup} onClick={() => inputRef.current?.click()} variant="secondary">
             <Upload size={18} />
             Importar
           </Button>

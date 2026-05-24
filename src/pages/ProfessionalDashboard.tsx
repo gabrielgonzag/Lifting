@@ -22,10 +22,13 @@ import { Input, Textarea } from "../components/ui/input";
 import { coachService } from "../services/coachService";
 import { coachTrainingService } from "../services/coachTrainingService";
 import { inviteService } from "../services/inviteService";
+import { permissionService } from "../services/permissionService";
+import { planService } from "../services/planService";
 import { sharedWorkoutService } from "../services/sharedWorkoutService";
 import { useAuthStore } from "../store/useAuthStore";
-import type { AppRoute, CoachNote, CoachWorkspace, SharedWorkoutExercise, SharedWorkoutPlan, StudentDashboard } from "../types";
+import type { AppRoute, CoachNote, CoachWorkspace, SharedWorkoutExercise, SharedWorkoutPlan, StudentDashboard, User } from "../types";
 import { makeId } from "../utils/id";
+import { studentLimitMessage } from "../utils/validators/planValidator";
 
 const StudentProgressCharts = lazy(() => import("../features/coach/StudentProgressCharts"));
 
@@ -374,13 +377,44 @@ function NotesPanel({ coachId, studentId, notes, onChange }: { coachId: string; 
   );
 }
 
-function InvitePanel({ coachId, workspace, refresh }: { coachId: string; workspace: CoachWorkspace; refresh: () => void }) {
+function InvitePanel({
+  activeStudents,
+  coachId,
+  refresh,
+  user,
+  workspace,
+}: {
+  activeStudents: number;
+  coachId: string;
+  refresh: () => void;
+  user?: User;
+  workspace: CoachWorkspace;
+}) {
   const [inviteTarget, setInviteTarget] = useState("");
   const [copied, setCopied] = useState("");
+  const [message, setMessage] = useState("");
+  const canInvite = permissionService.canInviteStudents(user) && planService.canInviteMoreStudents(user, activeStudents);
+
+  const notice = (value: string) => {
+    setMessage(value);
+    window.setTimeout(() => setMessage(""), 2200);
+  };
 
   const create = () => {
+    if (!permissionService.canInviteStudents(user)) {
+      notice("Seu plano atual nao permite criar convites.");
+      return;
+    }
+    if (!planService.canInviteMoreStudents(user, activeStudents)) {
+      notice(user ? studentLimitMessage(user.plan) : "Entre novamente para criar convites.");
+      return;
+    }
     if (!inviteTarget.trim()) return;
-    inviteService.createInvite(coachId, inviteTarget.trim());
+    const invite = inviteService.createInvite(coachId, inviteTarget.trim(), { user, activeStudentCount: activeStudents });
+    if (!invite) {
+      notice("Nao foi possivel criar o convite com seu plano atual.");
+      return;
+    }
     setInviteTarget("");
     refresh();
   };
@@ -390,15 +424,16 @@ function InvitePanel({ coachId, workspace, refresh }: { coachId: string; workspa
       <Card className="p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto]">
           <Input placeholder="Email, ID ou username do aluno" value={inviteTarget} onChange={(event) => setInviteTarget(event.target.value)} />
-          <Button onClick={create}>
+          <Button disabled={!canInvite} onClick={create}>
             <UserPlus size={17} />
             Enviar convite
           </Button>
-          <Button onClick={create} variant="secondary">
+          <Button disabled={!canInvite} onClick={create} variant="secondary">
             <Clipboard size={17} />
             Gerar link
           </Button>
         </div>
+        {message ? <p className="mt-3 rounded-md border border-coral/25 bg-coral/15 p-3 text-sm text-red-100">{message}</p> : null}
         <p className="mt-3 text-sm text-zinc-400">Link externo pronto para WhatsApp, Instagram, email ou copia manual. Envio real sera plugado na camada de integracao futura.</p>
       </Card>
       <div className="grid gap-3">
@@ -589,7 +624,7 @@ export default function ProfessionalDashboard({ onNavigate, route }: { onNavigat
               <h1 className="mt-2 text-3xl font-bold text-white">Convidar aluno</h1>
               <p className="mt-2 max-w-2xl text-zinc-400">Gere links, convites por email ou por ID. O aceite cria o vinculo coach/aluno quando o backend real for conectado.</p>
             </div>
-            <InvitePanel coachId={coachId} refresh={refresh} workspace={workspace} />
+            <InvitePanel activeStudents={activeStudents} coachId={coachId} refresh={refresh} user={user} workspace={workspace} />
           </div>
         ) : selectedStudent ? (
           <StudentDetail

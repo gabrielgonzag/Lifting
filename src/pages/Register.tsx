@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Chrome, Circle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Chrome, Circle, MailCheck, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -18,6 +18,7 @@ export default function Register({
 }) {
   const register = useAuthStore((state) => state.register);
   const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
+  const resendEmailConfirmation = useAuthStore((state) => state.resendEmailConfirmation);
   const isLoading = useAuthStore((state) => state.isLoading);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,12 +27,14 @@ export default function Register({
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [professional, setProfessional] = useState(false);
   const [message, setMessage] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
   const inviteCode = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("invite");
   const passwordValidation = useMemo(() => validationService.validatePassword(password), [password]);
   const emailValidation = useMemo(() => validationService.validateEmail(email), [email]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setMessage("");
     if (password !== confirmPassword) {
       setMessage("As senhas precisam ser iguais.");
       return;
@@ -60,12 +63,18 @@ export default function Register({
       return;
     }
     if (result.requiresEmailConfirmation || !result.user) {
-      setMessage(result.message ?? "Conta criada. Confirme seu email para entrar.");
-      window.setTimeout(() => onNavigate("login"), 2400);
+      setPendingEmail(result.email ?? emailValidation.normalized);
+      setMessage(result.message ?? "Conta criada. Verifique seu e-mail para confirmar o cadastro.");
       return;
     }
     if (inviteCode) inviteService.acceptInvite(inviteCode, result.user);
     onNavigate(routeForUser(result.user));
+  };
+
+  const resendConfirmation = async () => {
+    if (!pendingEmail) return;
+    const result = await resendEmailConfirmation(pendingEmail);
+    setMessage(result.message ?? (result.ok ? "E-mail reenviado." : "Nao foi possivel reenviar agora."));
   };
 
   const submitGoogle = async () => {
@@ -85,58 +94,82 @@ export default function Register({
       eyebrow="Onboarding"
       title="Criar conta"
     >
-      {inviteCode ? (
-        <p className="mb-4 rounded-md border border-lime/20 bg-lime/10 p-3 text-sm text-lime">
-          Convite detectado. Ao criar sua conta, o vinculo com o personal sera aplicado automaticamente.
-        </p>
-      ) : null}
-      <Button className="w-full" disabled={isLoading} onClick={submitGoogle} type="button" variant="secondary">
-        <Chrome size={18} />
-        Continuar com Google
-      </Button>
-      <div className="my-5 flex items-center gap-3 text-xs uppercase text-zinc-500">
-        <span className="h-px flex-1 bg-white/10" />
-        ou crie com email
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
-      <form className="grid gap-3" onSubmit={submit}>
-        <label className="grid gap-2 text-sm">
-          Nome
-          <Input autoComplete="name" onChange={(event) => setName(event.target.value)} placeholder="Seu nome" required value={name} />
-        </label>
-        <label className="grid gap-2 text-sm">
-          Email
-          <Input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required type="email" value={email} />
-          {email && !emailValidation.isValid ? <span className="text-xs text-coral">{emailValidation.message}</span> : null}
-        </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm">
-            Senha
-            <Input autoComplete="new-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-          </label>
-          <label className="grid gap-2 text-sm">
-            Confirmar senha
-            <Input autoComplete="new-password" minLength={8} onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} />
-          </label>
+      {pendingEmail ? (
+        <div className="grid gap-4">
+          <div className="rounded-md border border-lime/25 bg-lime/10 p-4 text-sm text-lime">
+            <MailCheck className="mb-3" size={24} />
+            <h2 className="text-lg font-semibold text-white">Conta criada</h2>
+            <p className="mt-2 text-lime">Verifique seu e-mail para confirmar o cadastro.</p>
+            <p className="mt-2 break-all text-zinc-300">{pendingEmail}</p>
+          </div>
+          {message ? <p className="rounded-md border border-white/10 bg-white/[.04] p-3 text-sm text-zinc-200">{message}</p> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={isLoading} onClick={resendConfirmation} type="button" variant="secondary">
+              <Send size={17} />
+              Reenviar confirmacao
+            </Button>
+            <Button onClick={() => onNavigate("login")} type="button">
+              Ir para login
+              <ArrowRight size={17} />
+            </Button>
+          </div>
         </div>
-        <PasswordFeedback validation={passwordValidation} />
-        <label className="flex min-h-11 items-center gap-3 text-sm text-zinc-200">
-          <input checked={professional} className="h-4 w-4 accent-lime" onChange={(event) => setProfessional(event.target.checked)} type="checkbox" />
-          Sou profissional de educacao fisica
-        </label>
-        <label className="flex min-h-11 items-start gap-3 text-sm text-zinc-300">
-          <input checked={acceptedTerms} className="mt-1 h-4 w-4 accent-lime" onChange={(event) => setAcceptedTerms(event.target.checked)} type="checkbox" />
-          Aceito os termos de uso e a politica de dados do ambiente local.
-        </label>
-        {message ? <p className="rounded-md bg-coral/15 p-3 text-sm text-red-100">{message}</p> : null}
-        <Button disabled={isLoading} type="submit">
-          Criar conta
-          <ArrowRight size={18} />
-        </Button>
-      </form>
-      <button className="mt-5 text-sm font-semibold text-lime" onClick={() => onNavigate("login")}>
-        Ja tenho conta
-      </button>
+      ) : (
+        <div>
+          {inviteCode ? (
+            <p className="mb-4 rounded-md border border-lime/20 bg-lime/10 p-3 text-sm text-lime">
+              Convite detectado. Ao criar sua conta, o vinculo com o personal sera aplicado automaticamente.
+            </p>
+          ) : null}
+          <Button className="w-full" disabled={isLoading} onClick={submitGoogle} type="button" variant="secondary">
+            <Chrome size={18} />
+            Continuar com Google
+          </Button>
+          <div className="my-5 flex items-center gap-3 text-xs uppercase text-zinc-500">
+            <span className="h-px flex-1 bg-white/10" />
+            ou crie com email
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+          <form className="grid gap-3" onSubmit={submit}>
+            <label className="grid gap-2 text-sm">
+              Nome
+              <Input autoComplete="name" onChange={(event) => setName(event.target.value)} placeholder="Seu nome" required value={name} />
+            </label>
+            <label className="grid gap-2 text-sm">
+              Email
+              <Input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required type="email" value={email} />
+              {email && !emailValidation.isValid ? <span className="text-xs text-coral">{emailValidation.message}</span> : null}
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm">
+                Senha
+                <Input autoComplete="new-password" minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              </label>
+              <label className="grid gap-2 text-sm">
+                Confirmar senha
+                <Input autoComplete="new-password" minLength={8} onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} />
+              </label>
+            </div>
+            <PasswordFeedback validation={passwordValidation} />
+            <label className="flex min-h-11 items-center gap-3 text-sm text-zinc-200">
+              <input checked={professional} className="h-4 w-4 accent-lime" onChange={(event) => setProfessional(event.target.checked)} type="checkbox" />
+              Sou profissional de educacao fisica
+            </label>
+            <label className="flex min-h-11 items-start gap-3 text-sm text-zinc-300">
+              <input checked={acceptedTerms} className="mt-1 h-4 w-4 accent-lime" onChange={(event) => setAcceptedTerms(event.target.checked)} type="checkbox" />
+              Aceito os termos de uso e a politica de dados do ambiente local.
+            </label>
+            {message ? <p className="rounded-md bg-coral/15 p-3 text-sm text-red-100">{message}</p> : null}
+            <Button disabled={isLoading} type="submit">
+              Criar conta
+              <ArrowRight size={18} />
+            </Button>
+          </form>
+          <button className="mt-5 text-sm font-semibold text-lime" onClick={() => onNavigate("login")}>
+            Ja tenho conta
+          </button>
+        </div>
+      )}
     </AuthFrame>
   );
 }
