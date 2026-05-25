@@ -19,6 +19,21 @@ export default function AuthCallback({
 
   useEffect(() => {
     let alive = true;
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get("error");
+    const urlErrorDescription = params.get("error_description");
+
+    if (urlError) {
+      setFailed(true);
+      setMessage(
+        urlErrorDescription
+          ? decodeURIComponent(urlErrorDescription).replace(/\+/g, " ")
+          : "Erro retornado pelo servidor de autenticacao.",
+      );
+      return () => {
+        alive = false;
+      };
+    }
 
     completeOAuthRedirect().then((result) => {
       if (!alive) return;
