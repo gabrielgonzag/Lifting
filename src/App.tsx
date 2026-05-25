@@ -8,6 +8,8 @@ import { appViews, guardRoute, parseHashRoute, routeForUser } from "./guards/rou
 
 const AdminPlaceholder = lazy(() => import("./pages/AdminPlaceholder"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const AuthError = lazy(() => import("./pages/AuthError"));
+const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const ElitePlaceholder = lazy(() => import("./pages/ElitePlaceholder"));
@@ -75,6 +77,20 @@ export default function App() {
     return (
       <Suspense fallback={authFallback}>
         <ResetPassword onNavigate={navigate} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "auth-success") {
+    return (
+      <Suspense fallback={authFallback}>
+        <AuthSuccess onNavigate={navigate} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "auth-error") {
+    return (
+      <Suspense fallback={authFallback}>
+        <AuthError onNavigate={navigate} />
       </Suspense>
     );
   }

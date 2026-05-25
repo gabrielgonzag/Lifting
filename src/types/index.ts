@@ -99,6 +99,8 @@ export type AppRoute =
   | "login"
   | "register"
   | "reset-password"
+  | "auth-success"
+  | "auth-error"
   | "auth/callback"
   | "verify-email"
   | "professional"

@@ -88,36 +88,60 @@ describe("auth service", () => {
     expect(result).toMatchObject({ ok: true, redirecting: true });
   });
 
-  it("disables email and password registration", async () => {
+  it("creates an email and password registration through Supabase", async () => {
     const { authService } = await import("./authService");
+    mocks.signUp.mockResolvedValue({
+      data: {
+        session: null,
+        user: { id: "new-user", identities: [{ id: "identity" }] },
+      },
+      error: null,
+    });
 
     const result = await authService.register({
       name: "Gabriel",
-      email: "gabriel@lifting.test",
+      email: " GABRIEL@LIFTING.TEST ",
       password: "Strong123",
       role: "casual",
     });
 
-    expect(result).toMatchObject({
-      ok: false,
-      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
+    expect(mocks.signUp).toHaveBeenCalledWith({
+      email: "gabriel@lifting.test",
+      password: "Strong123",
+      options: {
+        data: {
+          name: "Gabriel",
+          plan: "entry",
+          role: "casual",
+        },
+      },
     });
-    expect(mocks.signUp).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: true,
+      email: "gabriel@lifting.test",
+      requiresEmailConfirmation: true,
+    });
   });
 
-  it("disables email and password login", async () => {
+  it("signs in with email and password through Supabase", async () => {
     const { authService } = await import("./authService");
+    const casual = makeUser("casual");
+    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: casual.id } }, error: null });
+    mocks.ensureSupabaseProfile.mockResolvedValue(casual);
 
     const result = await authService.login({
-      email: "gabriel@lifting.test",
+      email: " GABRIEL@LIFTING.TEST ",
       password: "Strong123",
     });
 
-    expect(result).toMatchObject({
-      ok: false,
-      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
+    expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+      email: "gabriel@lifting.test",
+      password: "Strong123",
     });
-    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: true,
+      user: casual,
+    });
   });
 
   it("loads and validates the Supabase profile after OAuth callback", async () => {
@@ -198,15 +222,16 @@ describe("auth service", () => {
     });
   });
 
-  it("disables password reset while Google is the only auth entry point", async () => {
+  it("sends password reset email through Supabase", async () => {
     const { authService } = await import("./authService");
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
 
     const result = await authService.resetPassword("  GABRIEL@LIFTING.TEST ");
 
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("gabriel@lifting.test");
     expect(result).toMatchObject({
-      ok: false,
-      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
+      ok: true,
+      message: "Se houver uma conta, as instrucoes serao enviadas.",
     });
-    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
   });
 });
