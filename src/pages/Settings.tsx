@@ -36,7 +36,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "content-env-backup.json";
+    anchor.download = "lifting-backup.json";
     anchor.click();
     URL.revokeObjectURL(url);
     toast("Backup JSON exportado.");
@@ -50,7 +50,7 @@ export default function Settings() {
     }
     try {
       const data = JSON.parse(await file.text()) as AppSnapshot;
-      toast(store.importSnapshot(data) ? "Backup importado." : "JSON invalido para CONTENT.ENV.");
+      toast(store.importSnapshot(data) ? "Backup importado." : "JSON invalido para LIFTING.");
     } catch {
       toast("Nao foi possivel ler esse JSON.");
     }

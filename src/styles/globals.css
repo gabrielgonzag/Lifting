@@ -1,9 +1,11 @@
+@import "../../design/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --accent: #b7f34d;
+  --accent: var(--lime);
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,10 +22,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(183, 243, 77, 0.08), transparent 25rem),
-    linear-gradient(315deg, rgba(120, 216, 255, 0.06), transparent 30rem),
-    #303030;
-  color: #fafafa;
+    radial-gradient(800px 500px at 10% 0%, rgba(205, 255, 0, 0.08), transparent 60%),
+    radial-gradient(700px 600px at 100% 100%, rgba(255, 107, 91, 0.05), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  overflow: hidden;
 }
 
 button,
@@ -40,6 +43,7 @@ select {
 
 #root {
   min-height: 100vh;
+  height: 100vh;
 }
 
 ::selection {
