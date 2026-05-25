@@ -31,6 +31,7 @@ describe("route guards", () => {
   it("protects private, public, professional, and admin routes", () => {
     expect(guardRoute({ isAuthenticated: false, route: "workout" })).toBe("login");
     expect(guardRoute({ isAuthenticated: true, route: "login", user: makeUser("casual") })).toBe("home");
+    expect(guardRoute({ isAuthenticated: true, route: "auth/callback", user: makeUser("casual") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "coach", user: makeUser("casual") })).toBe("home");
     expect(guardRoute({ isAuthenticated: true, route: "coach", user: makeUser("professional") })).toBe("coach");
     expect(guardRoute({ isAuthenticated: true, route: "elite", user: makeUser("professional") })).toBe("home");

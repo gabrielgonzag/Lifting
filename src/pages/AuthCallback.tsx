@@ -19,6 +19,7 @@ export default function AuthCallback({
 
   useEffect(() => {
     let alive = true;
+    let redirectTimer: ReturnType<typeof window.setTimeout> | undefined;
     const params = new URLSearchParams(window.location.search);
     const urlError = params.get("error");
     const urlErrorDescription = params.get("error_description");
@@ -39,8 +40,11 @@ export default function AuthCallback({
       if (!alive) return;
       if (result.ok && result.user) {
         const nextRoute = routeForUser(result.user);
-        window.history.replaceState({}, document.title, `/#${nextRoute}`);
-        onNavigate(nextRoute);
+        redirectTimer = window.setTimeout(() => {
+          if (!alive) return;
+          window.history.replaceState({}, document.title, `/#${nextRoute}`);
+          onNavigate(nextRoute);
+        }, 100);
         return;
       }
       if (result.requiresEmailConfirmation) {
@@ -54,6 +58,7 @@ export default function AuthCallback({
 
     return () => {
       alive = false;
+      if (redirectTimer) window.clearTimeout(redirectTimer);
     };
   }, [completeOAuthRedirect, onNavigate, routeForUser]);
 
