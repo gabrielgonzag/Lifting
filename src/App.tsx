@@ -33,6 +33,11 @@ export default function App() {
   const loadUserData = useAppStore((state) => state.loadUserData);
 
   const navigate = (next: AppRoute) => {
+    if (window.location.pathname === "/auth/callback") {
+      window.history.replaceState({}, document.title, `/#${next}`);
+      setRoute(next);
+      return;
+    }
     window.location.hash = next;
     setRoute(next);
   };
