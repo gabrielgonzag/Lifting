@@ -24,6 +24,17 @@ const safeSignupError = (message: string) => {
 
 const oauthRedirectUrl = () => `${window.location.origin}/auth/callback`;
 
+const oauthErrorFromUrl = (url: URL) => {
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const error = url.searchParams.get("error") ?? hashParams.get("error");
+  const description = url.searchParams.get("error_description") ?? hashParams.get("error_description");
+  const code = url.searchParams.get("error_code") ?? hashParams.get("error_code");
+
+  if (!error && !description && !code) return undefined;
+  const safeDescription = description?.replace(/\+/g, " ");
+  return safeDescription || code || error || "Nao foi possivel concluir o login com Google.";
+};
+
 const waitForSupabaseProfile = async (userId: string) => {
   const startedAt = Date.now();
   const timeoutMs = 8_000;
@@ -61,8 +72,11 @@ export const authService = {
     if (!supabase || typeof window === "undefined") return { ok: true } satisfies AuthResult;
 
     const url = new URL(window.location.href);
+    const oauthError = oauthErrorFromUrl(url);
+    if (oauthError) return { ok: false, message: oauthError } satisfies AuthResult;
+
     const code = url.searchParams.get("code");
-    if (!code) return { ok: true } satisfies AuthResult;
+    if (!code) return { ok: false, message: "Retorno do Google sem codigo de autenticacao." } satisfies AuthResult;
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return { ok: false, message: error.message } satisfies AuthResult;

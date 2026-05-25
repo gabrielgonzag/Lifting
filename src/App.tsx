@@ -55,11 +55,43 @@ export default function App() {
     return <div className="mx-auto mt-8 min-h-64 max-w-xl animate-pulse rounded-lg border border-white/10 bg-white/5" />;
   }
 
-  if (guardedRoute === "login") return <Login onNavigate={navigate} routeForUser={routeForUser} />;
-  if (guardedRoute === "register") return <Register onNavigate={navigate} routeForUser={routeForUser} />;
-  if (guardedRoute === "reset-password") return <ResetPassword onNavigate={navigate} />;
-  if (guardedRoute === "auth/callback") return <AuthCallback onNavigate={navigate} routeForUser={routeForUser} />;
-  if (guardedRoute === "verify-email") return <VerifyEmail onNavigate={navigate} />;
+  const authFallback = <div className="mx-auto mt-8 min-h-64 max-w-xl animate-pulse rounded-lg border border-white/10 bg-white/5" />;
+
+  if (guardedRoute === "login") {
+    return (
+      <Suspense fallback={authFallback}>
+        <Login onNavigate={navigate} routeForUser={routeForUser} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "register") {
+    return (
+      <Suspense fallback={authFallback}>
+        <Register onNavigate={navigate} routeForUser={routeForUser} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "reset-password") {
+    return (
+      <Suspense fallback={authFallback}>
+        <ResetPassword onNavigate={navigate} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "auth/callback") {
+    return (
+      <Suspense fallback={authFallback}>
+        <AuthCallback onNavigate={navigate} routeForUser={routeForUser} />
+      </Suspense>
+    );
+  }
+  if (guardedRoute === "verify-email") {
+    return (
+      <Suspense fallback={authFallback}>
+        <VerifyEmail onNavigate={navigate} />
+      </Suspense>
+    );
+  }
 
   const pageKey = guardedRoute.startsWith("coach/students/") ? "coach" : guardedRoute;
   const pageMap = {

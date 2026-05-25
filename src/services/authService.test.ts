@@ -134,6 +134,19 @@ describe("auth service", () => {
     expect(result).toMatchObject({ ok: true, user: casual });
   });
 
+  it("returns Supabase OAuth errors from callback URL", async () => {
+    const { authService } = await import("./authService");
+    stubWindowUrl("http://localhost:3000/auth/callback?error=server_error&error_description=Unable+to+exchange+external+code");
+
+    const result = await authService.completeOAuthRedirect();
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: "Unable to exchange external code",
+    });
+    expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled();
+  });
+
   it("blocks suspended profiles after OAuth callback", async () => {
     const { authService } = await import("./authService");
     stubWindowUrl("http://localhost:3000/auth/callback?code=google-code");
