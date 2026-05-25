@@ -39,7 +39,8 @@ export type WorkoutSet = {
   id: string;
   weight: number;
   reps: number;
-  rpe?: number;
+  isPr?: boolean;
+  prType?: "weight" | "reps" | "volume";
   rest?: number;
   notes?: string;
   completed?: boolean;
@@ -72,7 +73,7 @@ export type WorkoutPlan = BaseEntity & {
   blocks: WorkoutBlock[];
 };
 
-export type PersonalRecordType = "absolute_weight" | "estimated_1rm" | "set_volume";
+export type PersonalRecordType = "absolute_weight" | "estimated_1rm" | "set_volume" | "max_reps";
 
 export type PersonalRecord = BaseEntity & {
   exerciseId: string;

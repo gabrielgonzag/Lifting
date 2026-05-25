@@ -3,7 +3,7 @@ import { Icon } from "../components/ui/Icon";
 import { useAppStore } from "../store/useAppStore";
 import type { PersonalRecord, WorkoutSession } from "../types";
 import { formatLongDate, inCurrentWeek } from "../utils/format";
-import { recordLabel } from "../utils/records";
+import { recordLabel, recordValueLabel } from "../utils/records";
 
 type ChartPoint = { date: string; kg: number };
 type FrequencyPoint = { w: string; days: number };
@@ -98,7 +98,7 @@ export default function Progress() {
             </div>
             <div className="grid gap-2">
               <Achievement icon="flame" sub={`${sessions.filter((session) => inCurrentWeek(session.date)).length} treinos nesta semana`} title="Consistencia ativa" tint="coral" />
-              <Achievement icon="trophy" sub={recentRecord ? `${recordLabel(recentRecord.type)} ${Math.round(recentRecord.value)} kg` : "sem PR recente"} title="PR recente" tint="lime" />
+              <Achievement icon="trophy" sub={recentRecord ? `${recordLabel(recentRecord.type)} ${recordValueLabel(recentRecord)}` : "sem PR recente"} title="PR recente" tint="lime" />
               <Achievement icon="calendar" sub={sessions[0] ? formatLongDate(sessions[0].date) : "-"} title="Ultimo treino" tint="sky" />
               <Achievement icon="chart" sub={selectedExercise ?? "Sem foco"} title="Exercicio em foco" tint="amber" />
             </div>

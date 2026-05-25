@@ -29,13 +29,14 @@ describe("personal record calculations", () => {
     expect(estimatedOneRepMax(100, 0)).toBe(0);
   });
 
-  it("creates absolute weight, 1RM, and volume records from completed sets", () => {
+  it("creates absolute weight, 1RM, volume, and reps records from completed sets", () => {
     const records = recordsForSession(session, []);
 
-    expect(records).toHaveLength(3);
+    expect(records).toHaveLength(4);
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "absolute_weight")?.value).toBe(100);
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "estimated_1rm")?.value).toBe(120);
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "set_volume")?.value).toBe(600);
+    expect(bestRecord(records, "peito-1-supino-reto-com-barra", "max_reps")?.value).toBe(6);
   });
 
   it("only returns records that beat previous bests", () => {
@@ -59,5 +60,36 @@ describe("personal record calculations", () => {
 
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "absolute_weight")).toBeUndefined();
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "estimated_1rm")?.value).toBe(120);
+  });
+
+  it("keeps a manually marked PR even when it does not beat a previous best", () => {
+    const previous: PersonalRecord[] = [
+      {
+        id: "pr-1",
+        userId: "user-1",
+        exerciseId: "peito-1-supino-reto-com-barra",
+        exerciseName: "Supino reto com barra",
+        type: "absolute_weight",
+        value: 120,
+        weight: 120,
+        reps: 1,
+        date: "2026-05-01T00:00:00.000Z",
+        createdAt: "2026-05-01T00:00:00.000Z",
+        updatedAt: "2026-05-01T00:00:00.000Z",
+      },
+    ];
+    const manualSession: WorkoutSession = {
+      ...session,
+      exercises: [
+        {
+          ...session.exercises[0],
+          sets: [{ id: "manual-pr", weight: 100, reps: 5, completed: true, isPr: true, prType: "weight" }],
+        },
+      ],
+    };
+
+    const records = recordsForSession(manualSession, previous);
+
+    expect(records.some((record) => record.type === "absolute_weight" && record.value === 100)).toBe(true);
   });
 });

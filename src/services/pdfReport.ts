@@ -1,7 +1,7 @@
 import type { PersonalRecord, WorkoutPlan, WorkoutSession } from "../types";
 import { exercises } from "../data/exercises";
 import { formatLongDate } from "../utils/format";
-import { recordLabel } from "../utils/records";
+import { recordLabel, recordValueLabel } from "../utils/records";
 
 const escapeHtml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -47,7 +47,7 @@ export function printFitnessReport({
     .slice(0, 16)
     .map(
       (record) =>
-        `<tr><td>${escapeHtml(record.exerciseName)}</td><td>${recordLabel(record.type)}</td><td>${Math.round(record.value * 10) / 10} kg</td><td>${record.weight} kg x ${record.reps}</td><td>${escapeHtml(formatLongDate(record.date))}</td></tr>`,
+        `<tr><td>${escapeHtml(record.exerciseName)}</td><td>${recordLabel(record.type)}</td><td>${recordValueLabel(record)}</td><td>${record.weight} kg x ${record.reps}</td><td>${escapeHtml(formatLongDate(record.date))}</td></tr>`,
     )
     .join("");
 

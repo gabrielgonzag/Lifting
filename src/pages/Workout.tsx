@@ -34,7 +34,8 @@ const emptySet = (): WorkoutDraftSet => ({
   id: makeId("set"),
   weight: "",
   reps: "",
-  rpe: "",
+  isPr: false,
+  prType: "weight",
   rest: "90",
   completed: false,
 });
@@ -159,9 +160,10 @@ export default function Workout() {
               id: set.id,
               weight: toNumber(set.weight),
               reps: toNumber(set.reps),
-              rpe: toNumber(set.rpe) || undefined,
+              isPr: set.isPr,
+              prType: set.prType,
               rest: toNumber(set.rest) || undefined,
-              completed: set.completed,
+              completed: set.completed || set.isPr,
             })),
         }))
         .filter((entry) => entry.sets.length > 0),
@@ -260,11 +262,11 @@ export default function Workout() {
                   <p className="text-sm text-zinc-400">{exercise?.muscleGroup ?? "Ficha do aluno"}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-[2rem_minmax(4rem,1fr)_minmax(4rem,1fr)_3.25rem_2.75rem_2.25rem] items-center gap-1 border-b border-white/10 px-1 pb-1 text-[11px] font-semibold uppercase text-zinc-500 sm:grid-cols-[3rem_7rem_6rem_4rem_3rem_2.5rem]">
+              <div className="grid grid-cols-[2rem_minmax(4rem,1fr)_minmax(4rem,1fr)_4.25rem_2.75rem_2.25rem] items-center gap-1 border-b border-white/10 px-1 pb-1 text-[11px] font-semibold uppercase text-zinc-500 sm:grid-cols-[3rem_7rem_6rem_4.75rem_3rem_2.5rem]">
                 <span>Serie</span>
                 <span>Peso</span>
                 <span>Repeticoes</span>
-                <span>RPE</span>
+                <span>PR</span>
                 <span className="text-center">Ok</span>
                 <span />
               </div>

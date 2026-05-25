@@ -1,6 +1,6 @@
 import { starterPlans, starterSessions } from "../data/mockData";
 import { databaseClient, supabase } from "../services/databaseClient";
-import type { AppSnapshot, PersonalRecord, WorkoutPlan, WorkoutSession } from "../types";
+import type { AppSnapshot, PersonalRecord, WorkoutExercise, WorkoutPlan, WorkoutSession } from "../types";
 import { buildRecordsFromSessions } from "../utils/records";
 
 type LegacySnapshot = {
@@ -82,12 +82,30 @@ const planFromRow = (row: PlanRow): WorkoutPlan => ({
   updatedAt: row.updated_at,
 });
 
+type StoredWorkoutSet = WorkoutSession["exercises"][number]["sets"][number] & {
+  is_pr?: boolean;
+  pr_type?: "reps" | "volume" | "weight";
+};
+
+const normalizeExercises = (exercises: WorkoutExercise[]): WorkoutExercise[] =>
+  exercises.map((entry) => ({
+    ...entry,
+    sets: entry.sets.map((set) => {
+      const stored = set as StoredWorkoutSet;
+      return {
+        ...set,
+        isPr: stored.isPr ?? stored.is_pr ?? false,
+        prType: stored.prType ?? stored.pr_type ?? "weight",
+      };
+    }),
+  }));
+
 const sessionFromRow = (row: SessionRow): WorkoutSession => ({
   id: row.id,
   userId: row.user_id,
   workoutPlanId: row.workout_plan_id,
   date: row.date,
-  exercises: row.exercises,
+  exercises: normalizeExercises(row.exercises),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -123,7 +141,14 @@ const sessionToRow = (session: WorkoutSession) => ({
   user_id: session.userId,
   workout_plan_id: session.workoutPlanId,
   date: session.date,
-  exercises: session.exercises,
+  exercises: session.exercises.map((entry) => ({
+    ...entry,
+    sets: entry.sets.map((set) => ({
+      ...set,
+      is_pr: set.isPr ?? false,
+      pr_type: set.prType ?? "weight",
+    })),
+  })),
   created_at: session.createdAt,
   updated_at: session.updatedAt,
 });

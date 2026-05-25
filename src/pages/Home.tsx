@@ -3,7 +3,7 @@ import { useAppStore } from "../store/useAppStore";
 import { useAuthStore } from "../store/useAuthStore";
 import type { AppView, PersonalRecord, WorkoutPlan } from "../types";
 import { inCurrentWeek } from "../utils/format";
-import { recordLabel } from "../utils/records";
+import { recordLabel, recordValueLabel } from "../utils/records";
 
 const weekLabels = ["S", "T", "Q", "Q", "S", "S", "D"];
 
@@ -100,7 +100,7 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
             icon="trophy"
             label="Ultimo PR"
             sub={recentRecord ? daysAgo(recentRecord.date) : "sem registro"}
-            value={recentRecord ? `${recordLabel(recentRecord.type)} ${Math.round(recentRecord.value)}kg` : "-"}
+            value={recentRecord ? `${recordLabel(recentRecord.type)} ${recordValueLabel(recentRecord)}` : "-"}
           />
           <StatTile icon="dumbbell" label="Volume da semana" sub={`${weeklySessions.length} sessoes`} value={`${(weeklyVolume / 1000).toFixed(1)}t`} />
           <StatTile icon="book" label="Fichas ativas" sub="ver todas" value={String(plans.length)} onClick={() => onNavigate("plans")} />
