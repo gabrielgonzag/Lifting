@@ -13,6 +13,7 @@ const publicUser = ({ password: _password, ...user }: StoredUser): User => user;
 type ProfileRow = {
   id: string;
   name: string;
+  username?: string | null;
   email: string;
   email_verified?: boolean | null;
   avatar_url: string | null;
@@ -36,6 +37,7 @@ const normalizeRole = (role: ProfileRow["role"]) => role;
 const profileToUser = (profile: ProfileRow): User => ({
   id: profile.id,
   name: profile.name,
+  username: profile.username ?? undefined,
   email: profile.email,
   emailVerified: profile.email_verified ?? false,
   avatarUrl: profile.avatar_url ?? undefined,

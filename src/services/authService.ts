@@ -6,10 +6,10 @@ import { hasSupabaseConfig, supabase } from "./databaseClient";
 
 const missingSupabaseMessage =
   "Supabase nao configurado. Verifique as variaveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.";
-const oauthPopupName = "lifting-google-auth";
 const duplicateEmailMessage = "Este email ja esta em uso.";
 const pendingConfirmationMessage = "Conta criada. Verifique seu e-mail para confirmar o cadastro.";
 const emailSendErrorMessage = "Nao foi possivel enviar o e-mail de confirmacao agora. Verifique a configuracao SMTP.";
+const googleOnlyMessage = "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.";
 
 const safeSignupError = (message: string) => {
   const lowerMessage = message.toLowerCase();
@@ -22,38 +22,38 @@ const safeSignupError = (message: string) => {
   return "Nao foi possivel criar sua conta agora.";
 };
 
-const oauthRedirectUrl = () => `${window.location.origin}/`;
-const shouldUseOAuthPopup = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const oauthRedirectUrl = () => `${window.location.origin}/auth/callback`;
 
-const oauthPopupFeatures = () => {
-  const width = 520;
-  const height = 680;
-  const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
-  const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
-  return `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
-};
-
-const waitForSupabaseUser = async (popup: Window) => {
+const waitForSupabaseProfile = async (userId: string) => {
   const startedAt = Date.now();
-  const timeoutMs = 90_000;
+  const timeoutMs = 8_000;
 
   while (Date.now() - startedAt < timeoutMs) {
-    if (popup.closed) {
-      return { ok: false, message: "Login com Google cancelado." } satisfies AuthResult;
-    }
-
-    const { data } = await supabase!.auth.getSession();
-    if (data.session?.user) {
-      popup.close();
-      const user = await userRepository.ensureSupabaseProfile(data.session.user.id);
-      return user ? ({ ok: true, user } satisfies AuthResult) : ({ ok: false, message: "Perfil Supabase nao encontrado." } satisfies AuthResult);
-    }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 750));
+    const user = await userRepository.ensureSupabaseProfile(userId);
+    if (user) return user;
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 700));
   }
 
-  popup.close();
-  return { ok: false, message: "Tempo esgotado ao entrar com Google." } satisfies AuthResult;
+  return undefined;
+};
+
+const validateSupabaseProfile = async (userId: string): Promise<AuthResult> => {
+  const user = await waitForSupabaseProfile(userId);
+  if (!user) return { ok: false, message: "Nao foi possivel carregar seu perfil. Tente sair e entrar novamente." };
+  if (user.status === "suspended") {
+    await supabase?.auth.signOut();
+    return { ok: false, message: "Sua conta esta suspensa. Entre em contato com o suporte." };
+  }
+  if (!user.emailVerified || user.status === "pending_verification") {
+    return {
+      ok: false,
+      user,
+      email: user.email,
+      requiresEmailConfirmation: true,
+      message: "Sua conta ainda precisa ser verificada.",
+    };
+  }
+  return { ok: true, user };
 };
 
 export const authService = {
@@ -67,17 +67,82 @@ export const authService = {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return { ok: false, message: error.message } satisfies AuthResult;
 
-    url.searchParams.delete("code");
-    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash || "#home"}`);
-    return { ok: true } satisfies AuthResult;
+    const { data } = await supabase.auth.getUser();
+    return data.user ? validateSupabaseProfile(data.user.id) : ({ ok: false, message: "Sessao Google nao encontrada." } satisfies AuthResult);
   },
   async currentUser() {
     if (supabase) {
       const { data } = await supabase.auth.getSession();
-      return data.session?.user ? userRepository.ensureSupabaseProfile(data.session.user.id) : undefined;
+      if (!data.session?.user) return undefined;
+      const result = await validateSupabaseProfile(data.session.user.id);
+      return result.ok || result.requiresEmailConfirmation ? result.user : undefined;
     }
     return undefined;
   },
+  async login({ email, password, asProfessional }: LoginInput): Promise<AuthResult> {
+    void email;
+    void password;
+    void asProfessional;
+    return { ok: false, message: googleOnlyMessage };
+  },
+  async loginWithGoogle(): Promise<AuthResult> {
+    if (!supabase) {
+      return { ok: false, message: "Login com Google requer Supabase configurado." };
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: oauthRedirectUrl(),
+      },
+    });
+    return error ? { ok: false, message: error.message } : { ok: true, redirecting: true, message: "Redirecionando para o Google." };
+  },
+  async register(input: RegisterInput): Promise<AuthResult> {
+    void input;
+    return { ok: false, message: googleOnlyMessage };
+  },
+  async resendEmailConfirmation(email: string): Promise<AuthResult> {
+    const emailValidation = validationService.validateEmail(email);
+    if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
+    if (!supabase) return { ok: false, message: missingSupabaseMessage };
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: emailValidation.normalized,
+    });
+
+    return error
+      ? { ok: false, email: emailValidation.normalized, message: safeSignupError(error.message) }
+      : {
+          ok: true,
+          email: emailValidation.normalized,
+          message: "Enviamos um novo e-mail de confirmacao.",
+          requiresEmailConfirmation: true,
+        };
+  },
+  async logout() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    userRepository.setSessionUserId();
+  },
+  async resetPassword(email: string): Promise<AuthResult> {
+    void email;
+    return {
+      ok: false,
+      message: googleOnlyMessage,
+    };
+  },
+};
+
+export const authBackend = hasSupabaseConfig ? "supabase" : "local";
+
+/*
+ * Email/password auth is intentionally disabled in the UI and service while
+ * LIFTING uses Google OAuth as the only public entry point.
+ */
+export const disabledEmailPasswordAuth = {
   async login({ email, password, asProfessional }: LoginInput): Promise<AuthResult> {
     const emailValidation = validationService.validateEmail(email);
     if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
@@ -122,47 +187,6 @@ export const authService = {
       return { ok: true, user };
     }
     return { ok: false, message: missingSupabaseMessage };
-  },
-  async loginWithGoogle(): Promise<AuthResult> {
-    if (!supabase) {
-      return { ok: false, message: "Login com Google requer Supabase configurado." };
-    }
-
-    if (!shouldUseOAuthPopup()) {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: oauthRedirectUrl(),
-        },
-      });
-      return error ? { ok: false, message: error.message } : { ok: true, redirecting: true, message: "Redirecionando para o Google." };
-    }
-
-    const popup = window.open("about:blank", oauthPopupName, oauthPopupFeatures());
-    if (!popup) {
-      return { ok: false, message: "Permita popups para entrar com Google." };
-    }
-    popup.document.title = "Entrar com Google";
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: oauthRedirectUrl(),
-        skipBrowserRedirect: true,
-      },
-    });
-    if (error) {
-      popup.close();
-      return { ok: false, message: error.message };
-    }
-
-    if (!data.url) {
-      popup.close();
-      return { ok: false, message: "Nao foi possivel iniciar o Google." };
-    }
-
-    popup.location.href = data.url;
-    return waitForSupabaseUser(popup);
   },
   async register(input: RegisterInput): Promise<AuthResult> {
     const name = validationService.sanitizeText(input.name);
@@ -232,12 +256,6 @@ export const authService = {
           requiresEmailConfirmation: true,
         };
   },
-  async logout() {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    userRepository.setSessionUserId();
-  },
   async resetPassword(email: string): Promise<AuthResult> {
     const emailValidation = validationService.validateEmail(email);
     if (!emailValidation.isValid) return { ok: false, message: emailValidation.message };
@@ -253,5 +271,3 @@ export const authService = {
     };
   },
 };
-
-export const authBackend = hasSupabaseConfig ? "supabase" : "local";

@@ -10,6 +10,7 @@ type AuthState = {
   hydrate: () => void;
   login: (input: LoginInput) => ReturnType<typeof authService.login>;
   loginWithGoogle: () => ReturnType<typeof authService.loginWithGoogle>;
+  completeOAuthRedirect: () => ReturnType<typeof authService.completeOAuthRedirect>;
   register: (input: RegisterInput) => ReturnType<typeof authService.register>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => ReturnType<typeof authService.resetPassword>;
@@ -41,6 +42,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const result = await authService.loginWithGoogle();
     set({
       user: result.user,
+      isAuthenticated: Boolean(result.user),
+      isLoading: false,
+    });
+    return result;
+  },
+  completeOAuthRedirect: async () => {
+    set({ isLoading: true });
+    const result = await authService.completeOAuthRedirect();
+    set({
+      user: result.requiresEmailConfirmation ? result.user : result.user,
       isAuthenticated: Boolean(result.user),
       isLoading: false,
     });

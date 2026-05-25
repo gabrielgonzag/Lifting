@@ -3,11 +3,14 @@ import type { User } from "../types";
 
 const mocks = vi.hoisted(() => ({
   ensureSupabaseProfile: vi.fn(),
+  exchangeCodeForSession: vi.fn(),
   getSession: vi.fn(),
+  getUser: vi.fn(),
   resend: vi.fn(),
   resetPasswordForEmail: vi.fn(),
   setSessionUserId: vi.fn(),
   signInWithPassword: vi.fn(),
+  signInWithOAuth: vi.fn(),
   signOut: vi.fn(),
   signUp: vi.fn(),
 }));
@@ -16,10 +19,13 @@ vi.mock("./databaseClient", () => ({
   hasSupabaseConfig: true,
   supabase: {
     auth: {
+      exchangeCodeForSession: mocks.exchangeCodeForSession,
       getSession: mocks.getSession,
+      getUser: mocks.getUser,
       resend: mocks.resend,
       resetPasswordForEmail: mocks.resetPasswordForEmail,
       signInWithPassword: mocks.signInWithPassword,
+      signInWithOAuth: mocks.signInWithOAuth,
       signOut: mocks.signOut,
       signUp: mocks.signUp,
     },
@@ -45,57 +51,62 @@ const makeUser = (role: User["role"]): User => ({
   updatedAt: "2026-05-23T00:00:00.000Z",
 });
 
+const stubWindowUrl = (href = "http://localhost:3000/#login") => {
+  vi.stubGlobal("window", {
+    location: {
+      href,
+      origin: "http://localhost:3000",
+    },
+    history: {
+      pushState: vi.fn((_state: unknown, _title: string, nextUrl: string) => {
+        (window.location as Location).href = new URL(nextUrl, "http://localhost:3000").href;
+      }),
+      replaceState: vi.fn(),
+    },
+  });
+};
+
 describe("auth service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    stubWindowUrl();
   });
 
-  it("returns an email confirmation state when Supabase creates a user without a session", async () => {
+  it("starts Google OAuth with the auth callback URL", async () => {
     const { authService } = await import("./authService");
-    mocks.signUp.mockResolvedValue({
-      data: { user: { id: "new-user" }, session: null },
-      error: null,
+    mocks.signInWithOAuth.mockResolvedValue({ error: null });
+
+    const result = await authService.loginWithGoogle();
+
+    expect(mocks.signInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: {
+        redirectTo: "http://localhost:3000/auth/callback",
+      },
     });
+    expect(result).toMatchObject({ ok: true, redirecting: true });
+  });
+
+  it("disables email and password registration", async () => {
+    const { authService } = await import("./authService");
 
     const result = await authService.register({
       name: "Gabriel",
-      email: "  GABRIEL@LIFTING.TEST ",
+      email: "gabriel@lifting.test",
       password: "Strong123",
       role: "casual",
     });
 
-    expect(mocks.signUp).toHaveBeenCalledWith({
-      email: "gabriel@lifting.test",
-      password: "Strong123",
-      options: { data: { name: "Gabriel", role: "casual", plan: "entry" } },
+    expect(result).toMatchObject({
+      ok: false,
+      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
     });
-    expect(result).toMatchObject({ ok: true, requiresEmailConfirmation: true });
+    expect(mocks.signUp).not.toHaveBeenCalled();
   });
 
-  it("blocks professional login when the account is casual", async () => {
+  it("disables email and password login", async () => {
     const { authService } = await import("./authService");
-    mocks.signInWithPassword.mockResolvedValue({
-      data: { user: { id: "casual-user" } },
-      error: null,
-    });
-    mocks.ensureSupabaseProfile.mockResolvedValue(makeUser("casual"));
-
-    const result = await authService.login({
-      email: "gabriel@lifting.test",
-      password: "Strong123",
-      asProfessional: true,
-    });
-
-    expect(result).toMatchObject({ ok: false, message: "Essa conta nao possui acesso ao plano COACH." });
-    expect(mocks.signOut).toHaveBeenCalledTimes(1);
-  });
-
-  it("blocks login before email confirmation", async () => {
-    const { authService } = await import("./authService");
-    mocks.signInWithPassword.mockResolvedValue({
-      data: { user: null },
-      error: { message: "Email not confirmed" },
-    });
 
     const result = await authService.login({
       email: "gabriel@lifting.test",
@@ -104,9 +115,56 @@ describe("auth service", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      email: "gabriel@lifting.test",
+      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
+    });
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("loads and validates the Supabase profile after OAuth callback", async () => {
+    const { authService } = await import("./authService");
+    const casual = makeUser("casual");
+    stubWindowUrl("http://localhost:3000/auth/callback?code=google-code");
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: casual.id } } });
+    mocks.ensureSupabaseProfile.mockResolvedValue(casual);
+
+    const result = await authService.completeOAuthRedirect();
+
+    expect(mocks.exchangeCodeForSession).toHaveBeenCalledWith("google-code");
+    expect(result).toMatchObject({ ok: true, user: casual });
+  });
+
+  it("blocks suspended profiles after OAuth callback", async () => {
+    const { authService } = await import("./authService");
+    stubWindowUrl("http://localhost:3000/auth/callback?code=google-code");
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "casual-user" } } });
+    mocks.ensureSupabaseProfile.mockResolvedValue({ ...makeUser("casual"), status: "suspended" });
+
+    const result = await authService.completeOAuthRedirect();
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: "Sua conta esta suspensa. Entre em contato com o suporte.",
+    });
+    expect(mocks.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps pending profiles inside the verification flow", async () => {
+    const { authService } = await import("./authService");
+    const pending = { ...makeUser("casual"), emailVerified: false, status: "pending_verification" as const };
+    stubWindowUrl("http://localhost:3000/auth/callback?code=google-code");
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: pending.id } } });
+    mocks.ensureSupabaseProfile.mockResolvedValue(pending);
+
+    const result = await authService.completeOAuthRedirect();
+
+    expect(result).toMatchObject({
+      ok: false,
+      user: pending,
       requiresEmailConfirmation: true,
-      message: "Confirme seu e-mail antes de entrar.",
+      message: "Sua conta ainda precisa ser verificada.",
     });
   });
 
@@ -127,34 +185,15 @@ describe("auth service", () => {
     });
   });
 
-  it("allows professional login for a professional profile", async () => {
+  it("disables password reset while Google is the only auth entry point", async () => {
     const { authService } = await import("./authService");
-    const professional = makeUser("professional");
-    mocks.signInWithPassword.mockResolvedValue({
-      data: { user: { id: professional.id } },
-      error: null,
-    });
-    mocks.ensureSupabaseProfile.mockResolvedValue(professional);
-
-    const result = await authService.login({
-      email: professional.email,
-      password: "Strong123",
-      asProfessional: true,
-    });
-
-    expect(result).toMatchObject({ ok: true, user: professional });
-  });
-
-  it("sends password reset requests through Supabase", async () => {
-    const { authService } = await import("./authService");
-    mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
 
     const result = await authService.resetPassword("  GABRIEL@LIFTING.TEST ");
 
-    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("gabriel@lifting.test");
     expect(result).toMatchObject({
-      ok: true,
-      message: "Se houver uma conta, as instrucoes serao enviadas.",
+      ok: false,
+      message: "No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.",
     });
+    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
   });
 });

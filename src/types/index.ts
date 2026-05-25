@@ -99,6 +99,7 @@ export type AppRoute =
   | "login"
   | "register"
   | "reset-password"
+  | "auth/callback"
   | "verify-email"
   | "professional"
   | "elite"

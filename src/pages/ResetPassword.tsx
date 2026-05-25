@@ -1,48 +1,24 @@
-import { Mail } from "lucide-react";
-import { useState } from "react";
+import { Chrome } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import { AuthFrame } from "../features/auth/AuthFrame";
-import { validationService } from "../services/validationService";
-import { useAuthStore } from "../store/useAuthStore";
 import type { AppRoute } from "../types";
 
 export default function ResetPassword({ onNavigate }: { onNavigate: (route: AppRoute) => void }) {
-  const resetPassword = useAuthStore((state) => state.resetPassword);
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const emailValidation = validationService.validateEmail(email);
-    if (!emailValidation.isValid) {
-      setMessage(emailValidation.message ?? "Email invalido.");
-      return;
-    }
-    const result = await resetPassword(email);
-    setMessage(result.message ?? "Solicitacao registrada.");
-  };
-
   return (
     <AuthFrame
-      copy="Enviaremos as instrucoes de recuperacao pelo provedor seguro configurado na sua conta."
-      eyebrow="Senha"
-      title="Recuperar acesso"
+      copy="Recuperacao por senha esta pausada enquanto o LIFTING usa somente autenticacao Google."
+      eyebrow="Acesso Google"
+      title="Senha indisponivel"
     >
-      <form className="grid gap-4" onSubmit={submit}>
-        <label className="grid gap-2 text-sm">
-          Email
-          <span className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-3.5 text-zinc-500" size={17} />
-            <Input className="pl-10" onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required type="email" value={email} />
-          </span>
-        </label>
-        {message ? <p className="rounded-md border border-lime/25 bg-lime/10 p-3 text-sm text-lime">{message}</p> : null}
-        <Button type="submit">Enviar</Button>
-      </form>
-      <button className="mt-5 text-sm font-semibold text-lime" onClick={() => onNavigate("login")}>
-        Voltar ao login
-      </button>
+      <div className="grid gap-4">
+        <div className="rounded-md border border-white/10 bg-white/[.04] p-4 text-sm text-zinc-300">
+          <Chrome className="mb-3 text-lime" size={22} />
+          No momento, o acesso ao LIFTING esta disponivel apenas com conta Google.
+        </div>
+        <Button onClick={() => onNavigate("login")} type="button">
+          Voltar ao login
+        </Button>
+      </div>
     </AuthFrame>
   );
 }

@@ -10,6 +10,7 @@ export const routes: AppRoute[] = [
   "login",
   "register",
   "reset-password",
+  "auth/callback",
   "verify-email",
   "professional",
   "coach",
@@ -19,7 +20,7 @@ export const routes: AppRoute[] = [
   "admin",
 ];
 
-export const publicRoutes: AppRoute[] = ["login", "register", "reset-password"];
+export const publicRoutes: AppRoute[] = ["login", "register", "reset-password", "auth/callback"];
 
 export const appViews: AppView[] = ["home", "plans", "workout", "progress", "settings"];
 

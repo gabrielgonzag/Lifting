@@ -7,6 +7,7 @@ import type { AppRoute, AppView } from "./types";
 import { appViews, guardRoute, parseHashRoute, routeForUser } from "./guards/routeGuards";
 
 const AdminPlaceholder = lazy(() => import("./pages/AdminPlaceholder"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const ElitePlaceholder = lazy(() => import("./pages/ElitePlaceholder"));
@@ -19,7 +20,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Workout = lazy(() => import("./pages/Workout"));
 
-const hashRoute = (): AppRoute => parseHashRoute(window.location.hash);
+const hashRoute = (): AppRoute => (window.location.pathname === "/auth/callback" ? "auth/callback" : parseHashRoute(window.location.hash));
 
 export default function App() {
   const [route, setRoute] = useState<AppRoute>(hashRoute);
@@ -57,6 +58,7 @@ export default function App() {
   if (guardedRoute === "login") return <Login onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "register") return <Register onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "reset-password") return <ResetPassword onNavigate={navigate} />;
+  if (guardedRoute === "auth/callback") return <AuthCallback onNavigate={navigate} routeForUser={routeForUser} />;
   if (guardedRoute === "verify-email") return <VerifyEmail onNavigate={navigate} />;
 
   const pageKey = guardedRoute.startsWith("coach/students/") ? "coach" : guardedRoute;

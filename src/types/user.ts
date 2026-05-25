@@ -7,6 +7,7 @@ export type UserStatus = "pending_verification" | "active" | "suspended";
 export type User = {
   id: string;
   name: string;
+  username?: string;
   email: string;
   emailVerified: boolean;
   avatarUrl?: string;
