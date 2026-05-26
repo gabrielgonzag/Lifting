@@ -28,7 +28,7 @@ export function ProfileAchievements({ achievementIds }: { achievementIds: string
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-white/15 p-4 text-sm text-[var(--fg-3)]">
-          Finalize um treino no modo foco para desbloquear suas primeiras conquistas.
+          Finalize um treino para desbloquear suas primeiras conquistas.
         </p>
       )}
     </section>

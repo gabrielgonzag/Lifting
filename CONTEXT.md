@@ -80,7 +80,6 @@ Integracao atual:
 - `src/components/ui/Toast.tsx` contem toast host/hook.
 - `src/main.tsx` envolve a app com `ToastHost`.
 - `src/pages/Login.tsx`, `src/pages/Home.tsx`, `src/pages/Plans.tsx`, `src/pages/Profile.tsx` e `src/pages/Progress.tsx` ja usam parte relevante do visual novo.
-- `src/features/focus-workout/FocusWorkoutScreen.tsx` usa direcao visual propria: preto profundo, tipografia gigante, poucos elementos e microinteracoes.
 
 Evitar voltar para marca CONTENT.ENV na UI. A chave legacy `content-env-store` em persistencia deve continuar para migracao de dados antigos.
 
@@ -94,7 +93,6 @@ src/components/            Componentes reutilizaveis
 src/components/auth/       Shell e componentes de auth
 src/components/profile/    Header, stats, conquistas, formulario e avatar do perfil
 src/features/              Areas de dominio, como auth e fichas
-src/features/focus-workout/ Smart Workout Mode, timer, audio e gestos
 src/features/gamification/ XP, nivel e progressao
 src/features/achievements/ Conquistas e raridades
 src/store/                 Stores Zustand
@@ -276,7 +274,7 @@ Regra de seguranca:
 - frontend nao define `email_verified`;
 - upgrades futuros devem vir de backend, admin, pagamento confirmado ou processo interno seguro;
 - RLS e triggers nao devem ser removidos.
-- `bio`, `goal`, `experienceLevel`, `avatarUrl`, `name` e `username` sao editaveis pelo usuario via `profileService`;
+- `bio`, `avatarUrl`, `name` e `username` sao editaveis pelo usuario via `profileService`;
 - `role`, `plan`, `status` e `emailVerified` continuam somente leitura no frontend.
 
 Migration de profile atual:
@@ -324,10 +322,10 @@ src/repositories/userRepository.ts
 
 Regras:
 
-- rota `profile` e item de navegacao no sidebar desktop e bottom nav mobile;
-- Settings possui entrada para abrir Perfil;
+- rota `profile` existe, mas nao aparece no menu principal;
+- perfil e acessado pelo card do usuario no canto inferior esquerdo do shell;
 - perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
-- usuario pode editar nome, username, avatar, bio, objetivo e nivel de experiencia;
+- usuario pode editar nome, username, avatar e bio;
 - username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
 - bio tem limite de 160 caracteres;
 - avatar aceita JPG, PNG ou WEBP ate 2MB;
@@ -497,13 +495,6 @@ Arquivos:
 ```txt
 src/pages/Workout.tsx
 src/components/workout/WorkoutSetRow.tsx
-src/features/focus-workout/FocusWorkoutScreen.tsx
-src/features/focus-workout/RestTimer.tsx
-src/features/focus-workout/NextSetPreview.tsx
-src/features/focus-workout/SetCompletionCard.tsx
-src/features/focus-workout/WorkoutGestureLayer.tsx
-src/features/focus-workout/useWorkoutAudio.ts
-src/store/useWorkoutSessionStore.ts
 src/utils/records.ts
 ```
 
@@ -566,71 +557,6 @@ supabase/migrations/20260525153000_add_manual_pr_sets.sql
 ```
 
 Ela adiciona `max_reps` ao enum `personal_record_type` e documenta `isPr/is_pr` e `prType/pr_type` no JSONB de sessoes.
-
-## Smart Workout Mode
-
-Nome interno:
-
-```txt
-Focus Workout Mode
-```
-
-Entrada:
-
-- `src/pages/Workout.tsx` possui botao `Modo foco` para fichas comuns;
-- modo coach ainda usa fluxo tradicional.
-
-Fluxo:
-
-- monta series focadas a partir da ficha ativa;
-- usa historico anterior para sugerir carga/reps quando houver;
-- cada exercicio recebe 4 series no modo foco;
-- ao finalizar serie:
-  - marca serie como concluida;
-  - inicia descanso automaticamente;
-  - toca som premium baixo;
-  - vibra no mobile;
-  - prepara proxima serie;
-  - se PR, vibra mais forte e toca feedback de PR.
-
-Presets de descanso:
-
-```txt
-compound_heavy: 180s
-compound_medium: 120s
-isolation: 60s
-core: 45s
-```
-
-Gestos:
-
-```txt
-Swipe direita: concluir serie
-Swipe esquerda: editar peso/reps/PR
-Swipe cima: abrir historico rapido
-```
-
-Som:
-
-```txt
-src/assets/sounds/mixkit-quick-win-video-game-notification-269.wav
-```
-
-Hook:
-
-```txt
-src/features/focus-workout/useWorkoutAudio.ts
-```
-
-Funcoes:
-
-```ts
-playSetComplete()
-playRestStart()
-playPrUnlocked()
-```
-
-O som original foi copiado da pasta raiz `sounds/`.
 
 ## Gamificacao e Conquistas
 
@@ -915,7 +841,6 @@ O sistema esta em transicao de app local para produto SaaS fitness:
 - planos e permissoes modelados;
 - fichas e treinos persistidos por usuario;
 - PR substituiu RPE no fluxo de treino;
-- Smart Workout Mode foi adicionado com timer, som, vibracao, swipe, XP e conquistas;
 - progresso com graficos e insights;
 - painel profissional preparado;
 - perfil de usuario com edicao segura e estatisticas pessoais;

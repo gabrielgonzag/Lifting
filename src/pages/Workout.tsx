@@ -15,7 +15,6 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Textarea } from "../components/ui/input";
 import { exercises } from "../data/exercises";
-import { FocusWorkoutScreen } from "../features/focus-workout/FocusWorkoutScreen";
 import { coachTrainingService } from "../services/coachTrainingService";
 import { useAppStore } from "../store/useAppStore";
 import type { CoachTrainingContext, SharedWorkoutPlan, WorkoutPlan, WorkoutSession } from "../types";
@@ -91,7 +90,6 @@ export default function Workout() {
   );
   const [seconds, setSeconds] = useState(0);
   const [finished, setFinished] = useState<Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt"> | null>(null);
-  const [focusMode, setFocusMode] = useState(false);
   const [notice, setNotice] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -201,10 +199,6 @@ export default function Workout() {
     );
   }
 
-  if (focusMode && selectedPlan) {
-    return <FocusWorkoutScreen onExit={() => setFocusMode(false)} plan={selectedPlan} />;
-  }
-
   return (
     <div>
       <SectionTitle copy="Registre cada serie sem sair do ritmo." title="Treino" />
@@ -251,12 +245,6 @@ export default function Workout() {
             <TimerReset size={18} />
             90s
           </Button>
-          {!isCoachSession && selectedPlan ? (
-            <Button onClick={() => setFocusMode(true)}>
-              <CheckCircle2 size={18} />
-              Modo foco
-            </Button>
-          ) : null}
         </div>
       </Card>
       {finished ? (
