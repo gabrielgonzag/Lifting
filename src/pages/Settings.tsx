@@ -1,4 +1,4 @@
-import { Download, FileText, RotateCcw, Upload } from "lucide-react";
+import { Download, FileText, RotateCcw, Upload, UserCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { SectionTitle } from "../components/common/SectionTitle";
 import { Toast } from "../components/common/Toast";
@@ -69,6 +69,16 @@ export default function Settings() {
   return (
     <div className="grid gap-5">
       <SectionTitle copy="Relatorio e seguranca dos seus dados." title="Backup" />
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+        <div>
+          <h3 className="text-lg font-semibold">Perfil</h3>
+          <p className="mt-1 text-sm text-zinc-400">Edite nome, username, avatar, objetivo e acompanhe sua evolucao.</p>
+        </div>
+        <Button onClick={() => { window.location.hash = "profile"; }} variant="secondary">
+          <UserCircle size={18} />
+          Abrir perfil
+        </Button>
+      </Card>
       <Card className="p-4 sm:p-5">
         <h3 className="text-lg font-semibold">Relatorio fitness</h3>
         <p className="mt-1 max-w-2xl text-sm text-zinc-400">

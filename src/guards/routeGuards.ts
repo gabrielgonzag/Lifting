@@ -6,6 +6,7 @@ export const routes: AppRoute[] = [
   "plans",
   "workout",
   "progress",
+  "profile",
   "settings",
   "login",
   "register",
@@ -24,7 +25,7 @@ export const routes: AppRoute[] = [
 
 export const publicRoutes: AppRoute[] = ["login", "register", "reset-password", "auth-success", "auth-error", "auth/callback"];
 
-export const appViews: AppView[] = ["home", "plans", "workout", "progress", "settings"];
+export const appViews: AppView[] = ["home", "plans", "workout", "progress", "profile", "settings"];
 
 export const routeForUser = (user: User): AppRoute => {
   if (user.role === "admin") return "admin";

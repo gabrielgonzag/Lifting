@@ -12,7 +12,7 @@ export type CoachStudentRelation = {
   updatedAt: string;
 };
 
-export type StudentProfile = User & {
+export type StudentProfile = Omit<User, "goal"> & {
   goal: string;
   frequencyGoal: number;
   lastWorkoutAt?: string;

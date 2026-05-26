@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { authService } from "../services/authService";
+import { profileService } from "../services/profileService";
 import { userService } from "../services/userService";
-import type { LoginInput, RegisterInput, User } from "../types";
+import type { EditableUserProfile, LoginInput, RegisterInput, User } from "../types";
 
 type AuthState = {
   user?: User;
@@ -15,6 +16,8 @@ type AuthState = {
   logout: () => Promise<void>;
   resetPassword: (email: string) => ReturnType<typeof authService.resetPassword>;
   resendEmailConfirmation: (email: string) => ReturnType<typeof authService.resendEmailConfirmation>;
+  refreshCurrentUserProfile: () => Promise<User | undefined>;
+  updateCurrentUserProfile: (profile: Partial<EditableUserProfile>) => Promise<{ errors?: Record<string, string>; ok: boolean; user?: User }>;
   updateProfile: (profile: Partial<Pick<User, "name" | "avatarUrl">>) => User | undefined;
 };
 
@@ -73,6 +76,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
   resetPassword: (email) => authService.resetPassword(email),
   resendEmailConfirmation: (email) => authService.resendEmailConfirmation(email),
+  refreshCurrentUserProfile: async () => {
+    const user = await authService.currentUser();
+    set({ user, isAuthenticated: Boolean(user), isLoading: false });
+    return user;
+  },
+  updateCurrentUserProfile: async (profile) => {
+    const user = get().user;
+    if (!user) return { ok: false, errors: { profile: "Usuario nao autenticado." } };
+    const result = await profileService.updateProfile(user, profile);
+    if (result.ok) set({ user: result.user });
+    return result.ok
+      ? { ok: true, user: result.user }
+      : { ok: false, errors: Object.fromEntries(Object.entries(result.errors).map(([key, value]) => [key, value ?? "Campo invalido."])) };
+  },
   updateProfile: (profile) => {
     const user = get().user;
     if (!user) return undefined;

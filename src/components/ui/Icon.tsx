@@ -21,6 +21,7 @@ export type IconName =
   | "list"
   | "log_out"
   | "note"
+  | "profile"
   | "play"
   | "plus"
   | "search"
@@ -77,6 +78,7 @@ export function Icon({ name, size = 18, stroke = 1.6, className = "", style, ...
     sparkles: <><path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7z" /><path d="M19 13l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" /></>,
     log_out: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>,
     note: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></>,
+    profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
     chevron_d: <path d="M6 9l6 6 6-6" />,
     chevron_u: <path d="M18 15l-6-6-6 6" />,
     search: <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></>,

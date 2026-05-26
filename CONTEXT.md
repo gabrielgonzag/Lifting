@@ -79,7 +79,7 @@ Integracao atual:
 - `src/components/ui/Icon.tsx` contem icones customizados do design.
 - `src/components/ui/Toast.tsx` contem toast host/hook.
 - `src/main.tsx` envolve a app com `ToastHost`.
-- `src/pages/Login.tsx`, `src/pages/Home.tsx`, `src/pages/Plans.tsx` e `src/pages/Progress.tsx` ja usam parte relevante do visual novo.
+- `src/pages/Login.tsx`, `src/pages/Home.tsx`, `src/pages/Plans.tsx`, `src/pages/Profile.tsx` e `src/pages/Progress.tsx` ja usam parte relevante do visual novo.
 - `src/features/focus-workout/FocusWorkoutScreen.tsx` usa direcao visual propria: preto profundo, tipografia gigante, poucos elementos e microinteracoes.
 
 Evitar voltar para marca CONTENT.ENV na UI. A chave legacy `content-env-store` em persistencia deve continuar para migracao de dados antigos.
@@ -92,6 +92,7 @@ Pastas principais:
 src/pages/                 Telas principais
 src/components/            Componentes reutilizaveis
 src/components/auth/       Shell e componentes de auth
+src/components/profile/    Header, stats, conquistas, formulario e avatar do perfil
 src/features/              Areas de dominio, como auth e fichas
 src/features/focus-workout/ Smart Workout Mode, timer, audio e gestos
 src/features/gamification/ XP, nivel e progressao
@@ -139,6 +140,7 @@ src/pages/AuthSuccess.tsx
 src/pages/AuthError.tsx
 src/pages/AuthCallback.tsx
 src/pages/VerifyEmail.tsx
+src/pages/Profile.tsx
 src/guards/routeGuards.ts
 ```
 
@@ -255,6 +257,9 @@ User {
   email;
   emailVerified;
   avatarUrl?;
+  bio?;
+  goal?;
+  experienceLevel?;
   role;
   plan;
   status;
@@ -271,11 +276,14 @@ Regra de seguranca:
 - frontend nao define `email_verified`;
 - upgrades futuros devem vir de backend, admin, pagamento confirmado ou processo interno seguro;
 - RLS e triggers nao devem ser removidos.
+- `bio`, `goal`, `experienceLevel`, `avatarUrl`, `name` e `username` sao editaveis pelo usuario via `profileService`;
+- `role`, `plan`, `status` e `emailVerified` continuam somente leitura no frontend.
 
 Migration de profile atual:
 
 ```txt
 supabase/migrations/20260525120000_google_only_profiles.sql
+supabase/migrations/20260526013000_add_profile_details.sql
 ```
 
 Ela:
@@ -287,6 +295,43 @@ Ela:
 - novos usuarios nascem como `role = casual`, `plan = entry`;
 - Google entra como `status = active` e `email_verified = true`;
 - email/senha depende de confirmacao de email para ficar ativo.
+- `20260526013000_add_profile_details.sql` adiciona `avatar_url`, `bio`, `goal`, `experience_level`, indice unico de username em lowercase e constraints de goal/experience.
+
+## Perfil
+
+Tela:
+
+```txt
+src/pages/Profile.tsx
+```
+
+Componentes:
+
+```txt
+src/components/profile/ProfileHeader.tsx
+src/components/profile/ProfileStats.tsx
+src/components/profile/ProfileAchievements.tsx
+src/components/profile/ProfileEditForm.tsx
+src/components/profile/AvatarUploader.tsx
+```
+
+Service/repository:
+
+```txt
+src/services/profileService.ts
+src/repositories/userRepository.ts
+```
+
+Regras:
+
+- rota `profile` e item de navegacao no sidebar desktop e bottom nav mobile;
+- Settings possui entrada para abrir Perfil;
+- perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
+- usuario pode editar nome, username, avatar, bio, objetivo e nivel de experiencia;
+- username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
+- bio tem limite de 160 caracteres;
+- avatar aceita JPG, PNG ou WEBP ate 2MB;
+- campos sensiveis (`role`, `plan`, `status`, `emailVerified`) nao sao editaveis pelo frontend.
 
 ## Permissoes
 
@@ -318,6 +363,7 @@ home
 plans
 workout
 progress
+profile
 settings
 login
 register
@@ -774,7 +820,7 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 24 testes passaram
+npm run test  - 33 testes passaram
 npm run build - passou
 ```
 
@@ -792,6 +838,7 @@ npm run build - passou
 20260524120000_sync_email_confirmation_status.sql
 20260525120000_google_only_profiles.sql
 20260525153000_add_manual_pr_sets.sql
+20260526013000_add_profile_details.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
@@ -871,6 +918,7 @@ O sistema esta em transicao de app local para produto SaaS fitness:
 - Smart Workout Mode foi adicionado com timer, som, vibracao, swipe, XP e conquistas;
 - progresso com graficos e insights;
 - painel profissional preparado;
+- perfil de usuario com edicao segura e estatisticas pessoais;
 - rotas protegidas;
 - design system premium aplicado nas telas principais.
 
@@ -881,4 +929,5 @@ Prioridades atuais:
 3. alinhar backend para criacao segura de profissionais/coaches se esse fluxo for liberado;
 4. evoluir painel do coach para destacar PRs dos alunos;
 5. persistir gamificacao no Supabase quando o backend estiver pronto;
-6. continuar migrando telas remanescentes para o design system novo.
+6. aplicar migration `20260526013000_add_profile_details.sql` no Supabase remoto;
+7. continuar migrando telas remanescentes para o design system novo.

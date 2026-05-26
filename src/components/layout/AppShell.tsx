@@ -17,6 +17,7 @@ const baseNav: NavItem[] = [
   { route: "plans", active: (route) => route === "plans", icon: "book", label: "Fichas", mobile: true },
   { route: "workout", active: (route) => route === "workout", icon: "dumbbell", label: "Treino", mobile: true },
   { route: "progress", active: (route) => route === "progress", icon: "chart", label: "Progresso", mobile: true },
+  { route: "profile", active: (route) => route === "profile", icon: "profile", label: "Perfil", mobile: true },
   { route: "settings", active: (route) => route === "settings", icon: "settings", label: "Backup" },
 ];
 
@@ -125,7 +126,7 @@ export function AppShell({
 
       <main className="min-w-0 flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
         {mobileNav.map((item) => {
           const active = item.active(activeRoute);
           return (

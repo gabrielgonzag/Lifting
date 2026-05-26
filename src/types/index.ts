@@ -14,7 +14,7 @@ export type {
   StudentProgressPoint,
   StudentWorkoutHistory,
 } from "./student";
-export type { User, UserPlan, UserRole, UserStatus } from "./user";
+export type { EditableUserProfile, User, UserExperienceLevel, UserGoal, UserPlan, UserRole, UserStatus } from "./user";
 export type { CoachTrainingContext, CoachWorkoutSyncPayload, WorkoutSyncResult } from "./workout";
 
 export type Category = "membros superiores" | "membros inferiores";
@@ -85,7 +85,7 @@ export type PersonalRecord = BaseEntity & {
   date: string;
 };
 
-export type AppView = "home" | "plans" | "workout" | "progress" | "settings";
+export type AppView = "home" | "plans" | "profile" | "progress" | "settings" | "workout";
 
 export type CoachRoute =
   | "coach"

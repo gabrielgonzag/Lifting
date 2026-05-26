@@ -14,6 +14,7 @@ const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const ElitePlaceholder = lazy(() => import("./pages/ElitePlaceholder"));
 const Plans = lazy(() => import("./pages/Plans"));
+const Profile = lazy(() => import("./pages/Profile"));
 const ProfessionalDashboard = lazy(() => import("./pages/ProfessionalDashboard"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Register = lazy(() => import("./pages/Register"));
@@ -118,6 +119,7 @@ export default function App() {
   const pageMap = {
     home: <Home onNavigate={navigate} />,
     plans: <Plans />,
+    profile: <Profile />,
     workout: <Workout />,
     progress: <Progress />,
     settings: <Settings />,
