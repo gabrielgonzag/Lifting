@@ -17,8 +17,6 @@ const statusLabel: Record<User["status"], string> = {
   suspended: "Suspenso",
 };
 
-const labelOrEmpty = (value?: string) => value?.replace("_", " ") ?? "Nao definido";
-
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateCurrentUserProfile);
@@ -94,8 +92,6 @@ export default function Profile() {
           <ReadOnlyItem label="Role" value={user.role} />
           <ReadOnlyItem label="Status" value={statusLabel[user.status]} />
           <ReadOnlyItem label="Conta criada" value={new Date(user.createdAt).toLocaleDateString("pt-BR")} />
-          <ReadOnlyItem label="Objetivo" value={labelOrEmpty(user.goal)} />
-          <ReadOnlyItem label="Experiencia" value={labelOrEmpty(user.experienceLevel)} />
           <ReadOnlyItem label="Verificacao" value={user.emailVerified ? "Email verificado" : "Email pendente"} />
           <ReadOnlyItem label="Ultima atualizacao" value={new Date(user.updatedAt).toLocaleDateString("pt-BR")} />
         </section>

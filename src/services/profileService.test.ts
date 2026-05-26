@@ -83,13 +83,15 @@ describe("profile service", () => {
     expect(result.ok ? "" : result.errors.username).toContain("uso");
   });
 
-  it("does not allow role, plan or status to be changed through profile updates", async () => {
+  it("does not allow role, plan, status, goal or experience to be changed through profile updates", async () => {
     const { profileService } = await import("./profileService");
     const { userRepository } = await import("../repositories/userRepository");
     const user = userRepository.create(baseUser("user-a", "gabriel"), "secret");
 
     await profileService.updateProfile(user, {
       name: "Gabriel Seguro",
+      experienceLevel: "atleta",
+      goal: "forca",
       plan: "elite",
       role: "admin",
       status: "suspended",
@@ -101,6 +103,8 @@ describe("profile service", () => {
     expect(updated?.role).toBe("casual");
     expect(updated?.plan).toBe("entry");
     expect(updated?.status).toBe("active");
+    expect(updated?.goal).toBeUndefined();
+    expect(updated?.experienceLevel).toBeUndefined();
   });
 
   it("validates the bio limit", async () => {

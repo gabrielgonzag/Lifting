@@ -110,8 +110,6 @@ export const userRepository = {
     if ("username" in profile) update.username = profile.username;
     if ("avatarUrl" in profile) update.avatar_url = profile.avatarUrl ?? null;
     if ("bio" in profile) update.bio = profile.bio;
-    if ("goal" in profile) update.goal = profile.goal;
-    if ("experienceLevel" in profile) update.experience_level = profile.experienceLevel;
 
     const { data, error } = await supabase
       .from("profiles")

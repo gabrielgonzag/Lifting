@@ -25,4 +25,4 @@ export type UserGoal = "condicionamento" | "emagrecimento" | "forca" | "hipertro
 
 export type UserExperienceLevel = "atleta" | "avancado" | "iniciante" | "intermediario";
 
-export type EditableUserProfile = Pick<User, "avatarUrl" | "bio" | "experienceLevel" | "goal" | "name" | "username">;
+export type EditableUserProfile = Pick<User, "avatarUrl" | "bio" | "name" | "username">;

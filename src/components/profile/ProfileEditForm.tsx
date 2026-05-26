@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { profileService, experienceLevels, goals } from "../../services/profileService";
+import { profileService } from "../../services/profileService";
 import type { EditableUserProfile, User } from "../../types";
 import { Button } from "../ui/button";
 import { Input, Textarea } from "../ui/input";
@@ -18,8 +18,6 @@ export function ProfileEditForm({ errors = {}, isSaving, onCancel, onSave, user 
   const [form, setForm] = useState<EditableUserProfile>({
     avatarUrl: user.avatarUrl,
     bio: user.bio ?? "",
-    experienceLevel: user.experienceLevel ?? "iniciante",
-    goal: user.goal ?? "hipertrofia",
     name: user.name,
     username: user.username ?? user.email.split("@")[0],
   });
@@ -29,8 +27,6 @@ export function ProfileEditForm({ errors = {}, isSaving, onCancel, onSave, user 
     setForm({
       avatarUrl: user.avatarUrl,
       bio: user.bio ?? "",
-      experienceLevel: user.experienceLevel ?? "iniciante",
-      goal: user.goal ?? "hipertrofia",
       name: user.name,
       username: user.username ?? user.email.split("@")[0],
     });
@@ -87,23 +83,6 @@ export function ProfileEditForm({ errors = {}, isSaving, onCancel, onSave, user 
           />
           <p className="mt-1 text-right text-xs text-[var(--fg-3)]">{form.bio?.length ?? 0}/160</p>
         </Field>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field error={errors.goal} label="Objetivo principal">
-            <select className="input" onChange={(event) => setForm((current) => ({ ...current, goal: event.target.value as EditableUserProfile["goal"] }))} value={form.goal}>
-              {goals.map((goal) => <option key={goal.value} value={goal.value}>{goal.label}</option>)}
-            </select>
-          </Field>
-          <Field error={errors.experienceLevel} label="Nivel de experiencia">
-            <select
-              className="input"
-              onChange={(event) => setForm((current) => ({ ...current, experienceLevel: event.target.value as EditableUserProfile["experienceLevel"] }))}
-              value={form.experienceLevel}
-            >
-              {experienceLevels.map((level) => <option key={level.value} value={level.value}>{level.label}</option>)}
-            </select>
-          </Field>
-        </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[.035] p-3 text-sm text-[var(--fg-3)]">
           Role, plano, status e verificacao de email sao protegidos e ficam apenas para leitura.

@@ -1,5 +1,5 @@
 import { userRepository } from "../repositories/userRepository";
-import type { EditableUserProfile, User, UserExperienceLevel, UserGoal } from "../types";
+import type { EditableUserProfile, User } from "../types";
 import { hasSupabaseConfig } from "./databaseClient";
 
 export type ProfileValidationResult = {
@@ -7,21 +7,6 @@ export type ProfileValidationResult = {
   errors: Partial<Record<keyof EditableUserProfile | "avatar", string>>;
   value?: EditableUserProfile;
 };
-
-export const goals: Array<{ label: string; value: UserGoal }> = [
-  { label: "Hipertrofia", value: "hipertrofia" },
-  { label: "Forca", value: "forca" },
-  { label: "Emagrecimento", value: "emagrecimento" },
-  { label: "Condicionamento", value: "condicionamento" },
-  { label: "Saude geral", value: "saude_geral" },
-];
-
-export const experienceLevels: Array<{ label: string; value: UserExperienceLevel }> = [
-  { label: "Iniciante", value: "iniciante" },
-  { label: "Intermediario", value: "intermediario" },
-  { label: "Avancado", value: "avancado" },
-  { label: "Atleta", value: "atleta" },
-];
 
 const usernamePattern = /^[a-z0-9._]+$/;
 const allowedAvatarTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -42,10 +27,6 @@ export const profileService = {
     else if (!usernamePattern.test(username)) errors.username = "Use apenas letras, numeros, ponto e underline.";
     else if (await userRepository.usernameExists(username, userId)) errors.username = "Esse username ja esta em uso.";
     if (bio.length > 160) errors.bio = "A bio deve ter no maximo 160 caracteres.";
-    if (input.goal && !goals.some((goal) => goal.value === input.goal)) errors.goal = "Objetivo invalido.";
-    if (input.experienceLevel && !experienceLevels.some((level) => level.value === input.experienceLevel)) {
-      errors.experienceLevel = "Nivel de experiencia invalido.";
-    }
 
     if (Object.keys(errors).length) return { errors, ok: false };
     return {
@@ -54,8 +35,6 @@ export const profileService = {
       value: {
         avatarUrl: input.avatarUrl,
         bio,
-        experienceLevel: input.experienceLevel,
-        goal: input.goal,
         name,
         username,
       },

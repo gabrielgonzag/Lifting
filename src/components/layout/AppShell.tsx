@@ -17,8 +17,6 @@ const baseNav: NavItem[] = [
   { route: "plans", active: (route) => route === "plans", icon: "book", label: "Fichas", mobile: true },
   { route: "workout", active: (route) => route === "workout", icon: "dumbbell", label: "Treino", mobile: true },
   { route: "progress", active: (route) => route === "progress", icon: "chart", label: "Progresso", mobile: true },
-  { route: "profile", active: (route) => route === "profile", icon: "profile", label: "Perfil", mobile: true },
-  { route: "settings", active: (route) => route === "settings", icon: "settings", label: "Backup" },
 ];
 
 const navForUser = (user?: User): NavItem[] => {
@@ -41,7 +39,7 @@ function Wordmark() {
   );
 }
 
-function UserChip({ user }: { user?: User }) {
+function UserChip({ active, onOpen, user }: { active: boolean; onOpen: () => void; user?: User }) {
   const level = useGamificationStore((state) => state.level);
   const xp = useGamificationStore((state) => state.xp);
   const progress = xpProgressPercent(xp);
@@ -52,9 +50,17 @@ function UserChip({ user }: { user?: User }) {
     .join("")
     .toUpperCase();
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border-hi)] bg-[linear-gradient(135deg,#2a2a2a,#151515)] text-sm font-bold">
-        {initials}
+    <button
+      className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl border bg-[var(--card)] p-3 text-left transition active:scale-[0.99] ${
+        active
+          ? "border-[var(--lime)] shadow-[0_0_28px_rgba(190,255,0,.10)]"
+          : "border-[var(--border)] hover:border-[var(--border-hi)] hover:bg-[var(--card-hi)] hover:shadow-[0_0_28px_rgba(190,255,0,.08)]"
+      }`}
+      onClick={onOpen}
+      type="button"
+    >
+      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--border-hi)] bg-[linear-gradient(135deg,#2a2a2a,#151515)] text-sm font-bold">
+        {user?.avatarUrl ? <img alt="" className="h-full w-full object-cover" src={user.avatarUrl} /> : initials}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
@@ -68,7 +74,8 @@ function UserChip({ user }: { user?: User }) {
           <span className="block h-full rounded-full bg-[var(--lime)] transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
-    </div>
+      <Icon className="shrink-0 text-[var(--fg-4)] transition group-hover:text-[var(--lime)]" name="arrow_r" size={14} />
+    </button>
   );
 }
 
@@ -116,7 +123,7 @@ export function AppShell({
           })}
         </nav>
         <div className="mt-auto grid gap-2">
-          <UserChip user={user} />
+          <UserChip active={activeRoute === "profile"} onOpen={() => onNavigate("profile")} user={user} />
           <button className="btn btn-ghost btn-sm justify-start text-[var(--fg-3)]" onClick={onLogout}>
             <Icon name="log_out" size={14} />
             Sair
@@ -126,7 +133,7 @@ export function AppShell({
 
       <main className="min-w-0 flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
         {mobileNav.map((item) => {
           const active = item.active(activeRoute);
           return (
