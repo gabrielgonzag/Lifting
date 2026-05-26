@@ -76,6 +76,7 @@ Integracao atual:
 
 - `src/styles/globals.css` importa `design/tokens.css`.
 - `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile, menu mobile de perfil e wordmark LIFTING.
+- no mobile, a topbar de perfil do `AppShell` some ao rolar para baixo no scroll interno e reaparece ao rolar para cima.
 - `src/components/ui/Icon.tsx` contem icones customizados do design.
 - `src/components/ui/Toast.tsx` contem toast host/hook.
 - `src/main.tsx` envolve a app com `ToastHost`.
@@ -327,6 +328,7 @@ Regras:
 - perfil e acessado pelo card do usuario no canto inferior esquerdo do shell;
 - no mobile, o perfil tambem e acessado pelo avatar fixo no canto superior direito;
 - o menu mobile do avatar mostra nome, email, plano, Meu Perfil, Configuracoes e Sair;
+- a topbar mobile do avatar usa animacao de slide e nao altera o layout desktop.
 - perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
 - usuario pode editar nome, username, avatar e bio;
 - username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
@@ -488,6 +490,7 @@ Direcao:
 - exercicios por grupo muscular;
 - selecao dentro do editor;
 - evitar biblioteca generica solta;
+- tela de fichas nao possui busca textual; manter somente filtro por grupo muscular;
 - ficha tem titulo, descricao compacta, cor, grupos musculares e blocos;
 - nao usar icones de ficha.
 
@@ -523,6 +526,8 @@ UI de serie:
 ```txt
 [Serie] [Peso] [Repeticoes] [PR] [Ok] [Remover]
 ```
+
+O botao `Finalizar treino` fica no final da lista de exercicios, como bloco normal do fluxo, para nao cobrir inputs no mobile.
 
 Botao PR:
 

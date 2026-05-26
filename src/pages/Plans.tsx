@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../components/ui/Icon";
 import { useToast } from "../components/ui/Toast";
-import { Input } from "../components/ui/input";
 import { PlanEditor } from "../features/workoutPlans/PlanEditor";
 import { planService } from "../services/planService";
 import { useAppStore } from "../store/useAppStore";
@@ -16,17 +15,11 @@ export default function Plans() {
   const user = useAuthStore((state) => state.user);
   const toast = useToast();
   const [editorPlan, setEditorPlan] = useState<WorkoutPlan | "new" | null>(null);
-  const [query, setQuery] = useState("");
   const groups = [...new Set(plans.flatMap((plan) => plan.muscleGroups))];
   const [group, setGroup] = useState("Todos");
   const filteredPlans = useMemo(
-    () =>
-      plans.filter(
-        (plan) =>
-          plan.title.toLowerCase().includes(query.toLowerCase()) &&
-          (group === "Todos" || plan.muscleGroups.includes(group)),
-      ),
-    [group, plans, query],
+    () => plans.filter((plan) => group === "Todos" || plan.muscleGroups.includes(group)),
+    [group, plans],
   );
   const canCreate = planService.canCreateMoreWorkouts(user, plans.length);
   const createBlockedMessage = user ? workoutLimitMessage(user.plan) : "Entre para criar fichas.";
@@ -67,12 +60,8 @@ export default function Plans() {
           </button>
         </header>
 
-        <div className="grid gap-3 md:grid-cols-[1fr_14rem]">
-          <label className="relative">
-            <Icon className="pointer-events-none absolute left-3 top-3.5 text-[var(--fg-3)]" name="search" size={16} />
-            <Input className="input pl-10" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar ficha" value={query} />
-          </label>
-          <select className="input" onChange={(event) => setGroup(event.target.value)} value={group}>
+        <div className="flex justify-start">
+          <select className="input w-full sm:max-w-64" onChange={(event) => setGroup(event.target.value)} value={group}>
             <option>Todos</option>
             {groups.map((item) => <option key={item}>{item}</option>)}
           </select>

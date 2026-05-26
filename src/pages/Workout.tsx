@@ -362,12 +362,17 @@ export default function Workout() {
           );
         })}
       </div>
-      <div className="sticky bottom-20 z-20 mt-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-panel/95 p-3 shadow-lift backdrop-blur lg:bottom-4">
-        <p className="text-sm text-zinc-400">{validSetCount} serie{validSetCount === 1 ? "" : "s"} pronta{validSetCount === 1 ? "" : "s"}</p>
-        <Button disabled={isSaving} onClick={finishWorkout} type="button">
-          <CheckCircle2 size={18} />
-          {isSaving ? "Salvando..." : "Finalizar"}
-        </Button>
+      <div className="mt-5 rounded-xl border border-white/10 bg-panel/80 p-4 shadow-lift">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">{validSetCount} serie{validSetCount === 1 ? "" : "s"} pronta{validSetCount === 1 ? "" : "s"}</p>
+            <p className="mt-1 text-xs text-zinc-400">Revise as cargas e finalize quando o treino estiver completo.</p>
+          </div>
+          <Button className="w-full sm:w-auto" disabled={isSaving} onClick={finishWorkout} type="button">
+            <CheckCircle2 size={18} />
+            {isSaving ? "Salvando..." : "Finalizar treino"}
+          </Button>
+        </div>
       </div>
       <Toast message={notice} />
     </div>

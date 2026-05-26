@@ -14,11 +14,13 @@ const initialsFor = (name?: string) =>
 
 export function MobileProfileMenu({
   activeRoute,
+  hidden,
   onLogout,
   onNavigate,
   user,
 }: {
   activeRoute: AppRoute;
+  hidden?: boolean;
   onLogout: () => void;
   onNavigate: (route: AppRoute) => void;
   user?: User;
@@ -45,6 +47,10 @@ export function MobileProfileMenu({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (hidden) setOpen(false);
+  }, [hidden]);
+
   const navigate = (route: AppRoute) => {
     setOpen(false);
     onNavigate(route);
@@ -52,7 +58,9 @@ export function MobileProfileMenu({
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-end border-b border-white/[.06] bg-[rgba(10,10,10,.72)] px-4 backdrop-blur-xl lg:hidden"
+      className={`fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-end border-b border-white/[.06] bg-[rgba(10,10,10,.72)] px-4 backdrop-blur-xl transition-transform duration-200 ease-out lg:hidden ${
+        hidden && !open ? "-translate-y-full" : "translate-y-0"
+      }`}
       ref={rootRef}
     >
       <button

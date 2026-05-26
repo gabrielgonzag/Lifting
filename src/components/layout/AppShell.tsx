@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode, type UIEvent } from "react";
 import { Icon, type IconName } from "../ui/Icon";
 import type { AppRoute, AppView, User } from "../../types";
 import { levelTitle, useGamificationStore, xpProgressPercent } from "../../features/gamification/useGamificationStore";
@@ -96,6 +96,23 @@ export function AppShell({
 }) {
   const nav = navForUser(user);
   const mobileNav = nav.filter((item) => item.mobile);
+  const lastScrollTop = useRef(0);
+  const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
+
+  const handleMainScroll = (event: UIEvent<HTMLElement>) => {
+    const nextScrollTop = event.currentTarget.scrollTop;
+    const delta = nextScrollTop - lastScrollTop.current;
+
+    if (nextScrollTop < 24) {
+      setMobileHeaderHidden(false);
+    } else if (delta > 8) {
+      setMobileHeaderHidden(true);
+    } else if (delta < -8) {
+      setMobileHeaderHidden(false);
+    }
+
+    lastScrollTop.current = Math.max(0, nextScrollTop);
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[var(--bg)] text-[var(--fg)]">
@@ -132,9 +149,9 @@ export function AppShell({
         </div>
       </aside>
 
-      <MobileProfileMenu activeRoute={activeRoute} onLogout={onLogout} onNavigate={onNavigate} user={user} />
+      <MobileProfileMenu activeRoute={activeRoute} hidden={mobileHeaderHidden} onLogout={onLogout} onNavigate={onNavigate} user={user} />
 
-      <main className="min-w-0 flex-1 overflow-y-auto pb-24 pt-16 lg:pb-0 lg:pt-0">{children}</main>
+      <main className="min-w-0 flex-1 overflow-y-auto pb-24 pt-16 lg:pb-0 lg:pt-0" onScroll={handleMainScroll}>{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
         {mobileNav.map((item) => {
