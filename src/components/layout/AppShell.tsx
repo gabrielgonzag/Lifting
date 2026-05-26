@@ -3,6 +3,7 @@ import { Icon, type IconName } from "../ui/Icon";
 import type { AppRoute, AppView, User } from "../../types";
 import { levelTitle, useGamificationStore, xpProgressPercent } from "../../features/gamification/useGamificationStore";
 import { canAccessCoach, canAccessElite } from "../../utils/validators/permissionValidator";
+import { MobileProfileMenu } from "../mobile/MobileProfileMenu";
 
 type NavItem = {
   route: AppRoute;
@@ -131,7 +132,9 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</main>
+      <MobileProfileMenu activeRoute={activeRoute} onLogout={onLogout} onNavigate={onNavigate} user={user} />
+
+      <main className="min-w-0 flex-1 overflow-y-auto pb-24 pt-16 lg:pb-0 lg:pt-0">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-[var(--border)] bg-[rgba(10,10,10,0.92)] px-1 pb-3 pt-2 backdrop-blur lg:hidden">
         {mobileNav.map((item) => {

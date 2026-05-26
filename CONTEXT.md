@@ -75,7 +75,7 @@ design/tweaks-panel.jsx
 Integracao atual:
 
 - `src/styles/globals.css` importa `design/tokens.css`.
-- `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile e wordmark LIFTING.
+- `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile, menu mobile de perfil e wordmark LIFTING.
 - `src/components/ui/Icon.tsx` contem icones customizados do design.
 - `src/components/ui/Toast.tsx` contem toast host/hook.
 - `src/main.tsx` envolve a app com `ToastHost`.
@@ -91,6 +91,7 @@ Pastas principais:
 src/pages/                 Telas principais
 src/components/            Componentes reutilizaveis
 src/components/auth/       Shell e componentes de auth
+src/components/mobile/     Componentes exclusivos da experiencia mobile
 src/components/profile/    Header, stats, conquistas, formulario e avatar do perfil
 src/features/              Areas de dominio, como auth e fichas
 src/features/gamification/ XP, nivel e progressao
@@ -324,6 +325,8 @@ Regras:
 
 - rota `profile` existe, mas nao aparece no menu principal;
 - perfil e acessado pelo card do usuario no canto inferior esquerdo do shell;
+- no mobile, o perfil tambem e acessado pelo avatar fixo no canto superior direito;
+- o menu mobile do avatar mostra nome, email, plano, Meu Perfil, Configuracoes e Sair;
 - perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
 - usuario pode editar nome, username, avatar e bio;
 - username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
