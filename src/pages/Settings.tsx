@@ -50,16 +50,20 @@ export default function Settings() {
     }
     try {
       const data = JSON.parse(await file.text()) as AppSnapshot;
-      toast(store.importSnapshot(data) ? "Backup importado." : "JSON invalido para LIFTING.");
+      toast((await store.importSnapshot(data)) ? "Backup importado." : "JSON invalido para LIFTING.");
     } catch {
-      toast("Nao foi possivel ler esse JSON.");
+      toast("Nao foi possivel importar esse JSON.");
     }
   };
 
-  const reset = () => {
+  const reset = async () => {
     if (!window.confirm("Apagar fichas, treinos e PRs salvos neste navegador?")) return;
-    store.resetLocalData();
-    toast("Dados resetados.");
+    try {
+      await store.resetLocalData();
+      toast("Dados resetados.");
+    } catch {
+      toast("Nao foi possivel resetar os dados.");
+    }
   };
 
   return (

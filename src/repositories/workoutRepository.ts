@@ -195,7 +195,7 @@ export const workoutRepository = {
         client.from("personal_records").select("*").eq("user_id", userId).order("date", { ascending: false }),
       ]);
       if (plans.error || sessions.error || personalRecords.error) {
-        return { plans: [], sessions: [], personalRecords: [] };
+        throw new Error(plans.error?.message ?? sessions.error?.message ?? personalRecords.error?.message ?? "Unable to load workout data.");
       }
       return {
         plans: (plans.data as PlanRow[]).map(planFromRow),
@@ -228,22 +228,25 @@ export const workoutRepository = {
         client.from("workout_sessions").select("id").eq("user_id", userId),
         client.from("personal_records").select("id").eq("user_id", userId),
       ]);
-      await Promise.all([
-        snapshot.plans.length ? client.from("workout_plans").upsert(snapshot.plans.map(planToRow)) : Promise.resolve(),
-        snapshot.sessions.length ? client.from("workout_sessions").upsert(snapshot.sessions.map(sessionToRow)) : Promise.resolve(),
-        snapshot.personalRecords.length
-          ? client.from("personal_records").upsert(snapshot.personalRecords.map(recordToRow))
-          : Promise.resolve(),
+      const currentError = current.find((result) => result.error)?.error;
+      if (currentError) throw new Error(currentError.message);
+
+      const mutations = [
+        ...(snapshot.plans.length ? [client.from("workout_plans").upsert(snapshot.plans.map(planToRow))] : []),
+        ...(snapshot.sessions.length ? [client.from("workout_sessions").upsert(snapshot.sessions.map(sessionToRow))] : []),
+        ...(snapshot.personalRecords.length ? [client.from("personal_records").upsert(snapshot.personalRecords.map(recordToRow))] : []),
         ...current.flatMap((result, index) => {
-          if (result.error) return [];
           const presentIds = new Set(
             [snapshot.plans, snapshot.sessions, snapshot.personalRecords][index].map((item) => item.id),
           );
-          const removed = result.data.map((item) => item.id).filter((id) => !presentIds.has(id));
+          const removed = (result.data ?? []).map((item) => item.id).filter((id) => !presentIds.has(id));
           const table = ["workout_plans", "workout_sessions", "personal_records"][index];
           return removed.length ? [client.from(table).delete().in("id", removed).eq("user_id", userId)] : [];
         }),
-      ]);
+      ];
+      const results = await Promise.all(mutations);
+      const mutationError = results.find((result) => result.error)?.error;
+      if (mutationError) throw new Error(mutationError.message);
       return;
     }
     const stored = readAll();

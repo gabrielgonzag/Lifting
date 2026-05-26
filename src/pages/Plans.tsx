@@ -39,13 +39,17 @@ export default function Plans() {
     setEditorPlan("new");
   };
 
-  const duplicate = (id: string) => {
+  const duplicate = async (id: string) => {
     if (!canCreate) {
       toast({ kind: "error", msg: createBlockedMessage });
       return;
     }
-    duplicatePlan(id);
-    toast({ kind: "ok", msg: "Ficha duplicada." });
+    try {
+      const duplicated = await duplicatePlan(id);
+      toast({ kind: duplicated ? "ok" : "error", msg: duplicated ? "Ficha duplicada." : "Nao foi possivel duplicar a ficha." });
+    } catch {
+      toast({ kind: "error", msg: "Nao foi possivel duplicar a ficha." });
+    }
   };
 
   return (
@@ -96,9 +100,13 @@ export default function Plans() {
               <FichaCard
                 delay={index * 40}
                 key={plan.id}
-                onDelete={() => {
-                  deletePlan(plan.id);
-                  toast({ kind: "ok", msg: "Ficha excluida." });
+                onDelete={async () => {
+                  try {
+                    const deleted = await deletePlan(plan.id);
+                    toast({ kind: deleted ? "ok" : "error", msg: deleted ? "Ficha excluida." : "Nao foi possivel excluir a ficha." });
+                  } catch {
+                    toast({ kind: "error", msg: "Nao foi possivel excluir a ficha." });
+                  }
                 }}
                 onDuplicate={() => duplicate(plan.id)}
                 onOpen={() => setEditorPlan(plan)}

@@ -93,6 +93,7 @@ export default function Workout() {
   const [finished, setFinished] = useState<Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt"> | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [notice, setNotice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (selectedCoachPlan) {
@@ -145,7 +146,8 @@ export default function Workout() {
     window.setTimeout(() => setNotice(""), 1900);
   };
 
-  const finishWorkout = () => {
+  const finishWorkout = async () => {
+    if (isSaving) return;
     if (!selectedPlan && !selectedCoachPlan) return;
     const session: Omit<WorkoutSession, "userId" | "createdAt" | "updatedAt"> = {
       id: makeId("session"),
@@ -165,7 +167,7 @@ export default function Workout() {
               isPr: set.isPr,
               prType: set.prType,
               rest: toNumber(set.rest) || undefined,
-              completed: set.completed || set.isPr,
+              completed: true,
             })),
         }))
         .filter((entry) => entry.sets.length > 0),
@@ -174,12 +176,19 @@ export default function Workout() {
       toast("Preencha carga e repeticoes antes de salvar.");
       return;
     }
-    const records =
-      coachContext && selectedCoachPlan
-        ? Number(coachTrainingService.completeWorkout({ context: coachContext, plan: selectedCoachPlan, session }).ok)
-        : saveSession(session);
-    setFinished(session);
-    toast(isCoachSession ? "Treino do aluno sincronizado." : records ? `${records} novo${records === 1 ? "" : "s"} PR${records === 1 ? "" : "s"} detectado${records === 1 ? "" : "s"}.` : "Treino salvo.");
+    setIsSaving(true);
+    try {
+      const records =
+        coachContext && selectedCoachPlan
+          ? Number(coachTrainingService.completeWorkout({ context: coachContext, plan: selectedCoachPlan, session }).ok)
+          : await saveSession(session);
+      setFinished(session);
+      toast(isCoachSession ? "Treino do aluno sincronizado." : records ? `${records} novo${records === 1 ? "" : "s"} PR${records === 1 ? "" : "s"} detectado${records === 1 ? "" : "s"}.` : "Treino salvo.");
+    } catch {
+      toast("Erro ao salvar treino. Verifique sua conexao.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isCoachSession && plans.length === 0) {
@@ -367,9 +376,9 @@ export default function Workout() {
       </div>
       <div className="sticky bottom-20 z-20 mt-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-panel/95 p-3 shadow-lift backdrop-blur lg:bottom-4">
         <p className="text-sm text-zinc-400">{validSetCount} serie{validSetCount === 1 ? "" : "s"} pronta{validSetCount === 1 ? "" : "s"}</p>
-        <Button onClick={finishWorkout}>
+        <Button disabled={isSaving} onClick={finishWorkout} type="button">
           <CheckCircle2 size={18} />
-          Finalizar
+          {isSaving ? "Salvando..." : "Finalizar"}
         </Button>
       </div>
       <Toast message={notice} />

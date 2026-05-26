@@ -33,6 +33,8 @@ export function FocusWorkoutScreen({ onExit, plan }: { onExit: () => void; plan:
   const [editorOpen, setEditorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [summary, setSummary] = useState<{ achievementIds: string[]; prs: number; xpGained: number } | null>(null);
+  const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (activePlan?.id !== plan.id) startFocusWorkout(plan, sessions);
@@ -63,7 +65,8 @@ export function FocusWorkoutScreen({ onExit, plan }: { onExit: () => void; plan:
     );
   }, [currentSet, records]);
 
-  const finishFocusWorkout = () => {
+  const finishFocusWorkout = async () => {
+    if (isSaving) return;
     const done = focusSets.filter((set) => set.completed || set.isPr);
     if (!done.length || summary) return;
     const session: Omit<WorkoutSession, "createdAt" | "updatedAt" | "userId"> = {
@@ -86,23 +89,31 @@ export function FocusWorkoutScreen({ onExit, plan }: { onExit: () => void; plan:
       id: `focus-session-${Date.now()}`,
       workoutPlanId: plan.id,
     };
-    const prs = saveSession(session);
-    const event = awardWorkoutCompleted({
-      prs,
-      sets: done.length,
-      streak: currentStreak([...sessions, session as WorkoutSession]),
-      unlocked: strengthAchievements(done),
-    });
-    if (prs > 0) {
-      audio.playPrUnlocked();
-      vibrate([80, 40, 100]);
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      const prs = await saveSession(session);
+      const event = awardWorkoutCompleted({
+        prs,
+        sets: done.length,
+        streak: currentStreak([...sessions, session as WorkoutSession]),
+        unlocked: strengthAchievements(done),
+      });
+      if (prs > 0) {
+        audio.playPrUnlocked();
+        vibrate([80, 40, 100]);
+      }
+      setSummary({ achievementIds: event.achievementIds, prs, xpGained: event.xpGained });
+    } catch {
+      setSaveError("Erro ao salvar treino. Verifique sua conexao.");
+    } finally {
+      setIsSaving(false);
     }
-    setSummary({ achievementIds: event.achievementIds, prs, xpGained: event.xpGained });
   };
 
   useEffect(() => {
-    if (focusSets.length && currentIndex >= focusSets.length) finishFocusWorkout();
-  }, [currentIndex, focusSets.length]);
+    if (focusSets.length && currentIndex >= focusSets.length) void finishFocusWorkout();
+  }, [currentIndex, focusSets.length, isSaving, summary]);
 
   const completeSet = () => {
     if (!currentSet) return;
@@ -180,9 +191,10 @@ export function FocusWorkoutScreen({ onExit, plan }: { onExit: () => void; plan:
                   <RestTimer nextSet={nextSet} onSkip={skipRest} remaining={restRemaining} total={currentSet.restSeconds} />
                 ) : (
                   <div className="grid gap-3">
-                    <button className="min-h-16 rounded-2xl bg-[var(--lime)] px-5 text-base font-black uppercase tracking-[.08em] text-zinc-950 shadow-[0_0_48px_rgba(205,255,0,.18)]" onClick={completeSet} type="button">
+                    <button className="min-h-16 rounded-2xl bg-[var(--lime)] px-5 text-base font-black uppercase tracking-[.08em] text-zinc-950 shadow-[0_0_48px_rgba(205,255,0,.18)] disabled:opacity-60" disabled={isSaving} onClick={completeSet} type="button">
                       Finalizar serie
                     </button>
+                    {saveError ? <p className="text-center text-sm font-semibold text-[var(--coral)]">{saveError}</p> : null}
                     <NextSetPreview set={nextSet} />
                   </div>
                 )}

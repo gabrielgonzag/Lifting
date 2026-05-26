@@ -36,6 +36,7 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
   );
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedExercises = selectedIds
     .map((id) => exercises.find((exercise) => exercise.id === id))
@@ -53,7 +54,7 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
     [],
   );
 
-  const savePlan = () => {
+  const savePlan = async () => {
     if (!title.trim() || selectedIds.length === 0) return;
     if (!plan && !planService.canCreateMoreWorkouts(user, plans.length)) {
       setNotice(user ? workoutLimitMessage(user.plan) : "Entre para criar fichas.");
@@ -74,9 +75,19 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
       muscleGroups: muscleGroupsFromSelection,
       blocks,
     };
-    if (plan) updatePlan({ ...plan, ...next });
-    else createPlan(next);
-    onClose();
+    setIsSaving(true);
+    try {
+      const saved = plan ? await updatePlan({ ...plan, ...next }) : Boolean(await createPlan(next));
+      if (!saved) {
+        setNotice("Nao foi possivel salvar a ficha. Tente novamente.");
+        return;
+      }
+      onClose();
+    } catch {
+      setNotice("Erro ao salvar a ficha. Verifique sua conexao.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleGroup = (group: string) => {
@@ -163,9 +174,14 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
                   </div>
                   <Button
                     aria-label={`Remover ${exercise.name}`}
-                    onClick={() => setSelectedIds((ids) => ids.filter((id) => id !== exercise.id))}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setSelectedIds((ids) => ids.filter((id) => id !== exercise.id));
+                    }}
                     size="icon"
                     title="Remover"
+                    type="button"
                     variant="ghost"
                   >
                     <X size={17} />
@@ -181,9 +197,9 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
           </Card>
           <div className="mt-4 flex justify-end gap-2">
             <Button onClick={onClose} variant="secondary">Cancelar</Button>
-            <Button disabled={!title.trim() || selectedIds.length === 0} onClick={savePlan}>
+            <Button disabled={isSaving || !title.trim() || selectedIds.length === 0} onClick={savePlan} type="button">
               <Check size={18} />
-              Salvar ficha
+              {isSaving ? "Salvando..." : "Salvar ficha"}
             </Button>
           </div>
         </div>
@@ -238,6 +254,7 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
                             onClick={() => addExercise(exercise)}
                             size="icon"
                             title="Adicionar"
+                            type="button"
                             variant={added ? "secondary" : "primary"}
                           >
                             {added ? <Check size={17} /> : <Plus size={17} />}
