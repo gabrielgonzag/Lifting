@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "../ui/Icon";
 import type { AppRoute, AppView, User } from "../../types";
+import { levelTitle, useGamificationStore, xpProgressPercent } from "../../features/gamification/useGamificationStore";
 import { canAccessCoach, canAccessElite } from "../../utils/validators/permissionValidator";
 
 type NavItem = {
@@ -40,6 +41,9 @@ function Wordmark() {
 }
 
 function UserChip({ user }: { user?: User }) {
+  const level = useGamificationStore((state) => state.level);
+  const xp = useGamificationStore((state) => state.xp);
+  const progress = xpProgressPercent(xp);
   const initials = (user?.name || "LT")
     .split(" ")
     .map((part) => part[0])
@@ -52,8 +56,16 @@ function UserChip({ user }: { user?: User }) {
         {initials}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
-        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--lime)]">{user?.plan ?? "entry"}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
+          <span className="shrink-0 rounded-md bg-[var(--lime)] px-1.5 py-0.5 text-[9px] font-black uppercase text-zinc-950">LVL {level}</span>
+        </div>
+        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--lime)]">
+          {levelTitle(level)} · {user?.plan ?? "entry"}
+        </p>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <span className="block h-full rounded-full bg-[var(--lime)] transition-all duration-500" style={{ width: `${progress}%` }} />
+        </div>
       </div>
     </div>
   );

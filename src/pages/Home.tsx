@@ -1,7 +1,8 @@
 import { Icon } from "../components/ui/Icon";
+import { levelTitle, useGamificationStore, XP_PER_LEVEL, xpProgressPercent } from "../features/gamification/useGamificationStore";
 import { useAppStore } from "../store/useAppStore";
 import { useAuthStore } from "../store/useAuthStore";
-import type { AppView, PersonalRecord, WorkoutPlan } from "../types";
+import type { AppView, WorkoutPlan } from "../types";
 import { inCurrentWeek } from "../utils/format";
 import { recordLabel, recordValueLabel } from "../utils/records";
 
@@ -21,6 +22,10 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
   const plans = useAppStore((state) => state.plans);
   const sessions = useAppStore((state) => state.sessions);
   const records = useAppStore((state) => state.personalRecords);
+  const level = useGamificationStore((state) => state.level);
+  const xp = useGamificationStore((state) => state.xp);
+  const totalXp = useGamificationStore((state) => state.totalXp);
+  const achievements = useGamificationStore((state) => state.achievements);
   const lastSession = sessions[0];
   const continuePlan = plans.find((plan) => plan.id === lastSession?.workoutPlanId) ?? plans[0];
   const recentRecord = [...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
@@ -36,6 +41,7 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
   );
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const levelProgress = xpProgressPercent(xp);
 
   return (
     <div className="min-h-full overflow-auto">
@@ -48,6 +54,8 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
             {greet}, <span className="text-[var(--fg-2)]">{user?.name.split(" ")[0] ?? "atleta"}.</span>
           </h1>
         </header>
+
+        <LevelProgressCard achievements={achievements.length} level={level} percent={levelProgress} totalXp={totalXp} xp={xp} />
 
         {continuePlan ? (
           <ContinueCard plan={continuePlan} lastDate={lastSession?.date ?? continuePlan.updatedAt} onContinue={() => onNavigate("workout")} />
@@ -107,6 +115,39 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
         </section>
       </div>
     </div>
+  );
+}
+
+function LevelProgressCard({ achievements, level, percent, totalXp, xp }: { achievements: number; level: number; percent: number; totalXp: number; xp: number }) {
+  return (
+    <section className="anim-rise overflow-hidden rounded-[18px] border border-[var(--lime-line)] bg-[linear-gradient(135deg,rgba(190,255,0,.14),rgba(24,24,24,.95)_44%,rgba(10,10,10,.98))] p-5">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="label text-[var(--lime)]">Progressao</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+            <h2 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">LVL {level}</h2>
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--fg-2)]">{levelTitle(level)}</span>
+          </div>
+          <p className="mt-1 text-sm text-[var(--fg-3)]">
+            {xp} / {XP_PER_LEVEL} XP para o proximo nivel
+          </p>
+        </div>
+        <div className="grid gap-1 text-left sm:text-right">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-3)]">Total</p>
+          <p className="text-xl font-bold">{totalXp} XP</p>
+          <p className="text-xs text-[var(--fg-3)]">{achievements} conquistas</p>
+        </div>
+      </div>
+      <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[var(--fg-3)]">
+          <span>Progresso do nivel</span>
+          <span>{percent}%</span>
+        </div>
+        <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-black/30">
+          <span className="block h-full rounded-full bg-[linear-gradient(90deg,var(--lime),#f8ff6a)] transition-all duration-700" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -24,7 +24,7 @@ type GamificationState = UserProgression & {
 };
 
 const storageKey = "lifting_user_progression";
-const xpPerLevel = 500;
+export const XP_PER_LEVEL = 500;
 
 const emptyProgression: UserProgression = {
   achievements: [],
@@ -61,8 +61,8 @@ export const levelTitle = (level: number) => {
 };
 
 const normalizeXp = (totalXp: number) => ({
-  level: Math.floor(totalXp / xpPerLevel) + 1,
-  xp: totalXp % xpPerLevel,
+  level: Math.floor(totalXp / XP_PER_LEVEL) + 1,
+  xp: totalXp % XP_PER_LEVEL,
 });
 
 const unlockCandidates = (state: UserProgression) => {
@@ -115,4 +115,4 @@ export const useGamificationStore = create<GamificationState>()((set, get) => ({
   },
 }));
 
-export const xpProgressPercent = (xp: number) => Math.round((xp / xpPerLevel) * 100);
+export const xpProgressPercent = (xp: number) => Math.round((xp / XP_PER_LEVEL) * 100);
