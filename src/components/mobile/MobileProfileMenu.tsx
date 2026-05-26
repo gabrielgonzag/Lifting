@@ -51,11 +51,14 @@ export function MobileProfileMenu({
   };
 
   return (
-    <div className="fixed right-4 top-3 z-50 lg:hidden" ref={rootRef}>
+    <div
+      className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-end border-b border-white/[.06] bg-[rgba(10,10,10,.72)] px-4 backdrop-blur-xl lg:hidden"
+      ref={rootRef}
+    >
       <button
         aria-expanded={open}
         aria-label="Abrir menu do perfil"
-        className={`grid h-11 w-11 place-items-center overflow-hidden rounded-full border bg-[var(--card)] text-sm font-black text-[var(--fg)] shadow-[0_14px_40px_rgba(0,0,0,.35)] transition active:scale-95 ${
+        className={`grid h-9 w-9 place-items-center overflow-hidden rounded-full border bg-[var(--card)] text-xs font-black text-[var(--fg)] shadow-[0_12px_32px_rgba(0,0,0,.35)] transition active:scale-95 ${
           open || activeRoute === "profile"
             ? "border-[var(--lime)] shadow-[0_0_28px_rgba(190,255,0,.12)]"
             : "border-[var(--border-hi)] hover:border-[var(--lime)] hover:bg-[var(--card-hi)]"
@@ -70,7 +73,7 @@ export function MobileProfileMenu({
         {open ? (
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="absolute right-0 mt-3 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border-hi)] bg-[rgba(20,20,20,.88)] shadow-[0_28px_80px_rgba(0,0,0,.55)] backdrop-blur-xl"
+            className="absolute right-4 top-14 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border-hi)] bg-[rgba(20,20,20,.88)] shadow-[0_28px_80px_rgba(0,0,0,.55)] backdrop-blur-xl"
             exit={{ opacity: 0, scale: 0.97, y: -8 }}
             initial={{ opacity: 0, scale: 0.97, y: -8 }}
             transition={{ duration: 0.16 }}
