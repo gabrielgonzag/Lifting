@@ -1,26 +1,26 @@
 # LIFTING - Contexto Mestre do Sistema
 
-Este arquivo e a referencia principal para novas sessoes de trabalho no projeto LIFTING. Leia este documento antes de alterar arquitetura, autenticacao, persistencia, rotas ou experiencia principal.
+Este arquivo e a referencia principal para novas sessoes no projeto LIFTING. Leia antes de alterar autenticacao, rotas, persistencia, Supabase, treino, PRs ou design system.
 
-## Identidade do Produto
+## Produto
 
 LIFTING, antes chamado internamente de CONTENT.ENV, e um app fitness premium para:
 
 - criar fichas de treino;
 - escolher exercicios por grupo muscular;
-- registrar series, carga, repeticoes e RPE;
-- calcular PRs e estimativas de 1RM;
+- registrar series, carga, repeticoes e PRs;
+- calcular recordes pessoais e estimativa de 1RM;
 - acompanhar progresso;
-- preparar base para usuarios reais, planos, coaches e persistencia em backend.
+- preparar base de SaaS com usuarios reais, planos, coaches, Supabase e backend futuro.
 
 Direcao de produto:
 
 - menos interface, mais treino;
 - mobile-first;
-- visual escuro premium;
-- simples, rapido e direto;
-- inspirado em Hevy, Strong, Nike Training Club, Notion e Linear;
-- evitar aparencia de dashboard tecnico generico.
+- visual dark premium;
+- UX direta, rapida e motivacional;
+- evitar aparencia de dashboard tecnico generico;
+- inspiracoes: Hevy, Strong, Nike Training Club, Notion e Linear.
 
 ## Stack
 
@@ -36,7 +36,7 @@ Direcao de produto:
 - Vitest
 - rollup-plugin-visualizer
 
-Scripts principais:
+Scripts:
 
 ```bash
 npm run dev
@@ -48,23 +48,56 @@ npm run preview
 npm run start
 ```
 
-Neste ambiente, se `npm` global nao existir, usar o runtime local:
+Neste ambiente Windows, se `npm` global nao estiver disponivel, usar:
 
 ```powershell
 $env:PATH=(Resolve-Path '.\.codex-node\node-v20.11.1-win-x64').Path + ';' + $env:PATH
 & '.\.codex-node\node-v20.11.1-win-x64\npm.cmd' run lint
 ```
 
-## Arquitetura Geral
+## Design System
 
-Pastas importantes:
+Foi integrado um design system proprio em `design/`.
+
+Arquivos de referencia:
+
+```txt
+design/tokens.css
+design/data.jsx
+design/shell.jsx
+design/screens-a.jsx
+design/screens-b.jsx
+design/screens-c.jsx
+design/app.jsx
+design/tweaks-panel.jsx
+```
+
+Integracao atual:
+
+- `src/styles/globals.css` importa `design/tokens.css`.
+- `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile e wordmark LIFTING.
+- `src/components/ui/Icon.tsx` contem icones customizados do design.
+- `src/components/ui/Toast.tsx` contem toast host/hook.
+- `src/main.tsx` envolve a app com `ToastHost`.
+- `src/pages/Login.tsx`, `src/pages/Home.tsx`, `src/pages/Plans.tsx` e `src/pages/Progress.tsx` ja usam parte relevante do visual novo.
+- `src/features/focus-workout/FocusWorkoutScreen.tsx` usa direcao visual propria: preto profundo, tipografia gigante, poucos elementos e microinteracoes.
+
+Evitar voltar para marca CONTENT.ENV na UI. A chave legacy `content-env-store` em persistencia deve continuar para migracao de dados antigos.
+
+## Arquitetura
+
+Pastas principais:
 
 ```txt
 src/pages/                 Telas principais
 src/components/            Componentes reutilizaveis
+src/components/auth/       Shell e componentes de auth
 src/features/              Areas de dominio, como auth e fichas
+src/features/focus-workout/ Smart Workout Mode, timer, audio e gestos
+src/features/gamification/ XP, nivel e progressao
+src/features/achievements/ Conquistas e raridades
 src/store/                 Stores Zustand
-src/services/              Regras de negocio e casos de uso
+src/services/              Regras de negocio/casos de uso
 src/repositories/          Persistencia local/Supabase
 src/guards/                Protecao de rotas
 src/types/                 Tipos centrais
@@ -73,30 +106,43 @@ src/data/                  Base fixa de exercicios e mocks
 supabase/migrations/       Schema, triggers, RLS e funcoes SQL
 ```
 
-Regra de arquitetura:
+Regras:
 
 - componentes nao devem acessar `localStorage` diretamente;
 - componentes nao devem chamar Supabase direto para dados de dominio;
 - persistencia passa por repositories;
-- regras passam por services, guards ou validators;
-- UI apenas consome stores/services e renderiza estados.
+- regras ficam em services, guards ou validators;
+- UI consome stores/services e renderiza estados;
+- nao criar bypass admin em producao.
 
-## Autenticacao Atual
+## Autenticacao
 
-Estado atual: somente Google OAuth via Supabase Auth.
+Estado atual: fluxo hibrido com Google principal e email/senha como alternativa.
 
-Email/senha esta temporariamente desabilitado:
+Fluxos ativos:
 
-- nao aparece na interface;
-- `authService.login()` retorna indisponivel;
-- `authService.register()` retorna indisponivel;
-- `authService.resetPassword()` retorna indisponivel;
-- codigo antigo existe isolado em `disabledEmailPasswordAuth`, mas nao deve ser usado na UI.
+1. Login rapido com Google via Supabase OAuth.
+2. Login manual com email/senha via `supabase.auth.signInWithPassword()`.
+3. Cadastro manual com email/senha via `supabase.auth.signUp()`.
+4. Recuperacao de senha via `supabase.auth.resetPasswordForEmail()`.
 
-Fluxo Google:
+Arquivos:
 
-1. Usuario clica em `Entrar com Google`.
-2. `authService.loginWithGoogle()` chama:
+```txt
+src/services/authService.ts
+src/store/useAuthStore.ts
+src/components/auth/AuthShell.tsx
+src/pages/Login.tsx
+src/pages/Register.tsx
+src/pages/ResetPassword.tsx
+src/pages/AuthSuccess.tsx
+src/pages/AuthError.tsx
+src/pages/AuthCallback.tsx
+src/pages/VerifyEmail.tsx
+src/guards/routeGuards.ts
+```
+
+Login Google:
 
 ```ts
 supabase.auth.signInWithOAuth({
@@ -107,39 +153,51 @@ supabase.auth.signInWithOAuth({
 });
 ```
 
-3. Supabase/Google retorna para `/auth/callback`.
-4. `AuthCallback` chama `completeOAuthRedirect()`.
-5. O codigo OAuth e trocado por session.
-6. O profile e buscado/criado via `userRepository.ensureSupabaseProfile()`.
-7. A conta e validada:
-   - `suspended` bloqueia e faz logout;
-   - `pending_verification` ou `emailVerified = false` vai para verificacao;
-   - perfil ativo entra no app.
+Callback OAuth:
 
-Arquivos principais:
+- `/auth/callback` chama `completeOAuthRedirect()`;
+- troca `code` por session;
+- busca/cria profile via `userRepository.ensureSupabaseProfile()`;
+- trata `error`, `error_code` e `error_description` da URL;
+- depois do login limpa a URL para `/#home`, `/#coach`, etc. sem manter `?code=...`.
 
-```txt
-src/services/authService.ts
-src/store/useAuthStore.ts
-src/features/auth/AuthProvider.tsx
-src/pages/Login.tsx
-src/pages/Register.tsx
-src/pages/AuthCallback.tsx
-src/pages/ResetPassword.tsx
-src/pages/VerifyEmail.tsx
-src/guards/routeGuards.ts
+Login manual:
+
+- valida email;
+- exige senha preenchida;
+- usa `signInWithPassword`;
+- bloqueia email nao confirmado;
+- valida profile, status e permissoes.
+
+Cadastro manual:
+
+- campos: nome, email, senha, confirmar senha, perfil aluno/profissional;
+- envia metadata `name`, `role`, `plan`;
+- apos signup sem session, vai para `auth-success`;
+- falhas vao para `auth-error`;
+- nao deve confiar no frontend para permissoes privilegiadas.
+
+Observacao de seguranca: a migration mais recente de profile (`20260525120000_google_only_profiles.sql`) cria novos usuarios como `casual + entry`; se o produto quiser permitir profissional real por cadastro manual, isso precisa ser tratado por backend seguro ou nova migration deliberada.
+
+## Supabase Auth
+
+Variaveis `.env`:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 ```
 
-Observacao importante:
+Nunca colocar no frontend:
 
-- `Login.tsx` e `Register.tsx` atualmente sao telas Google-only.
-- `ResetPassword.tsx` apenas informa que senha esta indisponivel.
-- `AuthCallback.tsx` deve sempre renderizar estados claros: carregando, erro, verificacao ou redirect.
-- O callback OAuth tambem trata `error`, `error_code` e `error_description` vindos na URL.
+```txt
+SUPABASE_SERVICE_ROLE_KEY
+senhas de banco
+tokens pessoais
+segredos OAuth
+```
 
-## Supabase OAuth
-
-Configuracao necessaria no Supabase:
+Configuracao esperada no Supabase:
 
 ```txt
 Authentication > URL Configuration
@@ -152,13 +210,17 @@ http://localhost:5173/auth/callback
 http://localhost:4173/auth/callback
 ```
 
-Configuracao necessaria no Google Cloud:
-
-- o OAuth Client usado pelo Supabase deve conter a redirect URI do Supabase Auth;
-- normalmente e algo como:
+Configuracao esperada no Google Cloud:
 
 ```txt
 https://SEU_PROJECT_REF.supabase.co/auth/v1/callback
+```
+
+Politica local em `supabase/config.toml`:
+
+```toml
+minimum_password_length = 8
+password_requirements = "lower_upper_letters_digits"
 ```
 
 Erro conhecido:
@@ -167,15 +229,13 @@ Erro conhecido:
 Unable to exchange external code
 ```
 
-Documentacao local:
+Normalmente indica configuracao OAuth/Supabase/Google. Documento local:
 
 ```txt
 LIFTING_GOOGLE_OAUTH_ERROR.md
 ```
 
-Esse erro costuma indicar configuracao OAuth/Supabase/Google, nao bug de cadastro comum.
-
-## Profile, Roles e Plans
+## Usuarios, Roles, Plans e Status
 
 Tipos:
 
@@ -209,9 +269,10 @@ Regra de seguranca:
 - frontend nao define plan privilegiado;
 - frontend nao define `status`;
 - frontend nao define `email_verified`;
-- upgrades futuros devem vir de backend, admin, pagamento confirmado ou processo interno seguro.
+- upgrades futuros devem vir de backend, admin, pagamento confirmado ou processo interno seguro;
+- RLS e triggers nao devem ser removidos.
 
-Migration mais recente:
+Migration de profile atual:
 
 ```txt
 supabase/migrations/20260525120000_google_only_profiles.sql
@@ -223,56 +284,34 @@ Ela:
 - cria `lifting_username_from_email(email, user_id)`;
 - atualiza `handle_new_user()`;
 - atualiza `ensure_profile()`;
-- novos usuarios Google nascem como:
-  - `role = casual`
-  - `plan = entry`
-  - `status = active`
-  - `email_verified = true`
-  - `username = parte antes do @`
-
-Fallback de username:
-
-```txt
-user_[primeiros_8_caracteres_do_id]
-```
+- novos usuarios nascem como `role = casual`, `plan = entry`;
+- Google entra como `status = active` e `email_verified = true`;
+- email/senha depende de confirmacao de email para ficar ativo.
 
 ## Permissoes
 
-Arquivo principal:
+Arquivos:
 
 ```txt
 src/utils/validators/permissionValidator.ts
+src/utils/validators/planValidator.ts
+src/services/permissionService.ts
+src/services/planService.ts
 ```
 
 Regras:
 
 - `admin` tem acesso total;
-- usuarios suspensos ou sem email verificado nao tem permissoes;
-- `entry` permite uso basico e limite de fichas;
-- `core` libera recursos individuais premium;
-- `coach` libera painel profissional;
-- `elite` libera areas enterprise;
-- role e plan sao avaliados juntos para coach.
-
-Plan limits:
-
-```txt
-ENTRY: ate 20 fichas
-CORE: fichas ilimitadas
-COACH: ate 10 alunos ativos
-ELITE: estrutura enterprise
-```
-
-Arquivo de planos:
-
-```txt
-src/utils/validators/planValidator.ts
-src/services/planService.ts
-```
+- suspensos ou sem email verificado nao tem permissoes;
+- `entry`: uso basico, limite de 20 fichas;
+- `core`: recursos individuais premium;
+- `coach`: painel profissional;
+- `elite`: areas enterprise;
+- role e plan sao avaliados juntos para coach/elite.
 
 ## Rotas
 
-Rotas principais:
+Rotas:
 
 ```txt
 home
@@ -283,6 +322,8 @@ settings
 login
 register
 reset-password
+auth-success
+auth-error
 auth/callback
 verify-email
 professional
@@ -299,10 +340,12 @@ Rotas publicas:
 login
 register
 reset-password
+auth-success
+auth-error
 auth/callback
 ```
 
-Redirecionamento apos login:
+Redirecionamento:
 
 ```txt
 admin -> admin
@@ -313,8 +356,8 @@ casual/core/entry -> home
 
 Protecao:
 
-- deslogado tentando area privada vai para `login`;
-- logado tentando rota publica vai para rota correta do usuario;
+- deslogado em rota privada vai para `login`;
+- logado em rota publica vai para rota correta;
 - usuario pendente vai para `verify-email`;
 - casual nao acessa `coach`, `elite` ou `admin`;
 - coach nao acessa `elite`;
@@ -328,7 +371,7 @@ src/guards/routeGuards.ts
 
 ## Dados e Persistencia
 
-Entidades principais usam `BaseEntity`:
+Entidades principais usam:
 
 ```ts
 BaseEntity {
@@ -343,6 +386,7 @@ Principais entidades:
 
 - `WorkoutPlan`
 - `WorkoutSession`
+- `WorkoutSet`
 - `PersonalRecord`
 - `SavedExercise`
 - `CoachStudentRelation`
@@ -350,33 +394,33 @@ Principais entidades:
 - `SharedWorkoutPlan`
 - `CoachNote`
 
-Store principal:
+Store:
 
 ```txt
 src/store/useAppStore.ts
 ```
 
-Ela carrega dados por `userId`, cria/edita/deleta fichas, salva sessoes, importa snapshot e reseta dados.
-
-Repository principal:
+Repository:
 
 ```txt
 src/repositories/workoutRepository.ts
 ```
 
-Com Supabase configurado:
+Com Supabase:
 
 - le `workout_plans`;
 - le `workout_sessions`;
 - le `personal_records`;
 - salva via `upsert`;
-- remove dados ausentes mantendo filtro por `user_id`.
+- remove dados ausentes filtrando por `user_id`;
+- normaliza `isPr/prType` vindos de JSONB;
+- persiste `is_pr/pr_type` dentro de `workout_sessions.exercises`.
 
 Sem Supabase:
 
 - usa `databaseClient` com localStorage;
-- migra dados legados;
-- semeia dados iniciais de `mockData`.
+- migra dados legados de `content-env-store`;
+- semeia dados iniciais de `src/data/mockData.ts`.
 
 ## Exercicios e Fichas
 
@@ -386,53 +430,76 @@ Base fixa:
 src/data/exercises.ts
 ```
 
-Direcao atual:
-
-- exercicios organizados por grupo muscular;
-- selecao dentro do editor de ficha;
-- evitar biblioteca generica solta;
-- mobile usa tabs/organizacao compacta.
-
 Editor:
 
 ```txt
 src/features/workoutPlans/PlanEditor.tsx
 ```
 
-Planos/fichas:
+Direcao:
 
-- possuem titulo, descricao, cor, grupos musculares e blocos;
-- nao devem usar icones de ficha;
-- descricao deve ser compacta.
+- exercicios por grupo muscular;
+- selecao dentro do editor;
+- evitar biblioteca generica solta;
+- ficha tem titulo, descricao compacta, cor, grupos musculares e blocos;
+- nao usar icones de ficha.
 
-## Treino e PRs
+## Treino, Series e PR
 
-Tela:
+Arquivos:
 
 ```txt
 src/pages/Workout.tsx
 src/components/workout/WorkoutSetRow.tsx
-```
-
-Regras de input:
-
-- campos numericos devem usar string durante digitacao;
-- nao deixar zero preso no inicio;
-- permitir apagar campo totalmente;
-- converter para numero apenas para salvar/calcular;
-- impedir negativos.
-
-PRs:
-
-```txt
+src/features/focus-workout/FocusWorkoutScreen.tsx
+src/features/focus-workout/RestTimer.tsx
+src/features/focus-workout/NextSetPreview.tsx
+src/features/focus-workout/SetCompletionCard.tsx
+src/features/focus-workout/WorkoutGestureLayer.tsx
+src/features/focus-workout/useWorkoutAudio.ts
+src/store/useWorkoutSessionStore.ts
 src/utils/records.ts
 ```
 
-Tipos:
+RPE foi removido.
 
-- `absolute_weight`
-- `estimated_1rm`
-- `set_volume`
+`WorkoutSet` atual:
+
+```ts
+WorkoutSet {
+  id;
+  weight;
+  reps;
+  isPr?;
+  prType?: "weight" | "reps" | "volume";
+  rest?;
+  notes?;
+  completed?;
+}
+```
+
+UI de serie:
+
+```txt
+[Serie] [Peso] [Repeticoes] [PR] [Ok] [Remover]
+```
+
+Botao PR:
+
+- neutro quando desligado;
+- dourado/amarelo quando ativo;
+- usa icone/animacao;
+- ao salvar, marca `completed = true` para aquela serie se `isPr = true`.
+
+Tipos de PR:
+
+```ts
+PersonalRecordType =
+  | "absolute_weight"
+  | "estimated_1rm"
+  | "set_volume"
+  | "max_reps";
+```
 
 Formula de 1RM:
 
@@ -440,23 +507,170 @@ Formula de 1RM:
 estimated1RM = weight * (1 + reps / 30)
 ```
 
-Somente series completas, com peso e reps validos, devem gerar PR.
+Regras:
+
+- series com peso e reps validos geram PR automatico quando batem anterior;
+- series marcadas manualmente com `isPr` geram historico de PR mesmo se nao superarem o melhor anterior;
+- `recordValueLabel()` evita mostrar `kg` em PR de repeticoes.
+
+Migration:
+
+```txt
+supabase/migrations/20260525153000_add_manual_pr_sets.sql
+```
+
+Ela adiciona `max_reps` ao enum `personal_record_type` e documenta `isPr/is_pr` e `prType/pr_type` no JSONB de sessoes.
+
+## Smart Workout Mode
+
+Nome interno:
+
+```txt
+Focus Workout Mode
+```
+
+Entrada:
+
+- `src/pages/Workout.tsx` possui botao `Modo foco` para fichas comuns;
+- modo coach ainda usa fluxo tradicional.
+
+Fluxo:
+
+- monta series focadas a partir da ficha ativa;
+- usa historico anterior para sugerir carga/reps quando houver;
+- cada exercicio recebe 4 series no modo foco;
+- ao finalizar serie:
+  - marca serie como concluida;
+  - inicia descanso automaticamente;
+  - toca som premium baixo;
+  - vibra no mobile;
+  - prepara proxima serie;
+  - se PR, vibra mais forte e toca feedback de PR.
+
+Presets de descanso:
+
+```txt
+compound_heavy: 180s
+compound_medium: 120s
+isolation: 60s
+core: 45s
+```
+
+Gestos:
+
+```txt
+Swipe direita: concluir serie
+Swipe esquerda: editar peso/reps/PR
+Swipe cima: abrir historico rapido
+```
+
+Som:
+
+```txt
+src/assets/sounds/mixkit-quick-win-video-game-notification-269.wav
+```
+
+Hook:
+
+```txt
+src/features/focus-workout/useWorkoutAudio.ts
+```
+
+Funcoes:
+
+```ts
+playSetComplete()
+playRestStart()
+playPrUnlocked()
+```
+
+O som original foi copiado da pasta raiz `sounds/`.
+
+## Gamificacao e Conquistas
+
+Arquivos:
+
+```txt
+src/features/gamification/useGamificationStore.ts
+src/features/achievements/achievements.ts
+```
+
+Progressao:
+
+```ts
+UserProgression {
+  level;
+  xp;
+  totalXp;
+  streak;
+  achievements;
+}
+```
+
+XP:
+
+```txt
+Treino concluido: +100 XP
+PR: +50 XP
+7 dias seguidos: +300 XP
+30 dias seguidos: +1000 XP
+```
+
+Niveis:
+
+```txt
+1-5     Iniciante
+6-15    Consistente
+16-30   Forte
+31-50   Elite
+51+     Lenda
+```
+
+Conquistas implementadas:
+
+- primeiro treino;
+- 7 dias seguidos;
+- 30 dias seguidos;
+- 10 PRs;
+- 50 PRs;
+- 100 series concluidas;
+- 40kg no supino;
+- 100kg no supino;
+- 300kg no leg press;
+- 40kg no agachamento.
+
+Raridades:
+
+```txt
+common
+rare
+epic
+legendary
+```
+
+Persistencia atual da gamificacao:
+
+- `useGamificationStore` usa `localStorage` na chave `lifting_user_progression`;
+- e aceitavel por enquanto por estar centralizado em store;
+- futuro ideal: tabelas `user_progression`, `user_achievements`, `user_streaks`, `workout_xp_history`.
 
 ## Progresso
 
-Tela:
+Arquivo:
 
 ```txt
 src/pages/Progress.tsx
-src/components/charts/MetricCharts.tsx
 ```
 
-Direcao de UX:
+Direcao:
 
-- no maximo 2 graficos principais;
-- foco em recorde pessoal e frequencia;
-- substituir excesso de dashboard por insights simples;
-- Recharts deve ficar lazy/carregado so em telas que precisam de graficos.
+- maximo 2 graficos principais;
+- grafico de PR/evolucao de forca;
+- grafico de frequencia;
+- insights e conquistas recentes;
+- evitar excesso de dashboard.
+
+`Progress.tsx` usa grafico SVG proprio para linha/barra. Recharts permanece no bundle para telas/componentes que ainda usam graficos, mas deve ser lazy quando possivel.
 
 ## Painel Profissional
 
@@ -481,11 +695,12 @@ src/repositories/sharedWorkoutRepository.ts
 src/repositories/studentRepository.ts
 ```
 
-Estado atual:
+Estado:
 
 - painel existe como fundacao;
-- dados de coach possuem mocks e estrutura;
-- funcionalidades enterprise/coach completas ainda sao futuras.
+- dados de coach possuem mocks/estrutura;
+- PRs e sessoes marcadas devem futuramente aparecer melhor no painel do coach;
+- funcionalidades enterprise completas ainda sao futuras.
 
 ## Configuracoes e Exportacao
 
@@ -507,16 +722,15 @@ Exportacao:
 src/services/pdfReport.ts
 ```
 
-Removido/evitar:
+Observacao de seguranca:
 
-- aparencia;
-- densidade;
-- dados locais expostos demais;
-- excesso de controles.
+- o PDF usa `window.open` + `document.write`;
+- conteudo textual passa por `escapeHtml`;
+- se ampliar a exportacao, sanitizar qualquer valor usado em `style`, como `plan.color`.
 
 ## Bundle e Performance
 
-Vite possui `manualChunks` em:
+Vite:
 
 ```txt
 vite.config.ts
@@ -536,15 +750,9 @@ Analise:
 npm run build:analyze
 ```
 
-Regras:
-
-- paginas pesadas devem usar lazy loading;
-- componentes com graficos devem ser lazy quando fizer sentido;
-- Recharts nao deve carregar na home/login.
-
 ## Testes
 
-Testes existentes:
+Testes:
 
 ```txt
 src/services/authService.test.ts
@@ -566,9 +774,11 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 23 testes passaram
+npm run test  - 24 testes passaram
 npm run build - passou
 ```
+
+`npm audit --omit=dev` tambem passou com 0 vulnerabilidades na ultima revisao.
 
 ## Migrations Supabase Importantes
 
@@ -581,11 +791,12 @@ npm run build - passou
 20260523143000_harden_public_signup_roles.sql
 20260524120000_sync_email_confirmation_status.sql
 20260525120000_google_only_profiles.sql
+20260525153000_add_manual_pr_sets.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
 
-## Arquivos de Contexto e Documentacao
+## Documentacao Local
 
 ```txt
 LIFTING_AUTH_BUSINESS_RULES.txt
@@ -601,23 +812,23 @@ content_env_master_prompt.md
 
 - Nunca colocar service role key no frontend.
 - Nunca confiar no frontend para role, plan, status ou email verification.
-- Nao reativar email/senha na UI sem decisao explicita.
 - Nao criar bypass admin em producao.
 - Nao chamar Supabase direto em componentes para dados de dominio.
 - Nao quebrar `/auth/callback`; ele precisa renderizar com `Suspense`.
 - Se OAuth mostrar `Unable to exchange external code`, revisar configuracao Supabase/Google antes de culpar codigo.
-- Nao remover RLS ou triggers de seguranca.
+- Nao remover RLS, triggers ou policies de ownership.
 - Se mexer em auth, rodar testes de `authService` e `routeGuards`.
+- Se mexer em PRs/treino, rodar testes de `records`.
 
 ## Git e Deploy
 
-Repositorio remoto:
+Repositorio:
 
 ```txt
 https://github.com/gabrielgonzag/Lifting.git
 ```
 
-Branch principal:
+Branch:
 
 ```txt
 main
@@ -638,24 +849,36 @@ npm run test
 npm run build
 ```
 
-## Estado Atual do Produto
+## Commits Recentes Relevantes
+
+```txt
+ddf5a1f apply lifting design system
+6a430fb restore email auth flows
+adf40aa clean oauth callback url after login
+5f23c02 replace rpe with personal record marker
+2c6bcac tighten supabase password policy
+```
+
+## Estado Atual
 
 O sistema esta em transicao de app local para produto SaaS fitness:
 
-- autenticacao com Google/Supabase;
+- autenticacao Google + email/senha via Supabase;
 - profiles e ownership por usuario;
 - planos e permissoes modelados;
 - fichas e treinos persistidos por usuario;
+- PR substituiu RPE no fluxo de treino;
+- Smart Workout Mode foi adicionado com timer, som, vibracao, swipe, XP e conquistas;
+- progresso com graficos e insights;
 - painel profissional preparado;
 - rotas protegidas;
-- PRs e progresso implementados;
-- UI orientada a treino real e menos dashboard.
+- design system premium aplicado nas telas principais.
 
-Prioridade atual:
+Prioridades atuais:
 
-1. estabilizar OAuth Google em producao;
-2. garantir migrations aplicadas no Supabase;
-3. validar criacao automatica de profile;
-4. manter entrada Google-only;
-5. evoluir features sem comprometer seguranca de roles/plans.
-
+1. garantir migrations aplicadas no Supabase remoto;
+2. validar auth Google e email/senha em producao;
+3. alinhar backend para criacao segura de profissionais/coaches se esse fluxo for liberado;
+4. evoluir painel do coach para destacar PRs dos alunos;
+5. persistir gamificacao no Supabase quando o backend estiver pronto;
+6. continuar migrando telas remanescentes para o design system novo.
