@@ -61,6 +61,14 @@ export const achievements: Achievement[] = [
     xpReward: 500,
   },
   {
+    id: "hundred-workouts",
+    title: "Cem Rituais",
+    description: "Finalize 100 treinos no LIFTING.",
+    icon: "flame",
+    rarity: "legendary",
+    xpReward: 1000,
+  },
+  {
     id: "bench-40",
     title: "Supino Acordou",
     description: "Registre 40kg no supino.",

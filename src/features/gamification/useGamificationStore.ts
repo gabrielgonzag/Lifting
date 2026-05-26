@@ -73,6 +73,7 @@ const unlockCandidates = (state: UserProgression) => {
   if (state.prs >= 10) ids.push("ten-prs");
   if (state.prs >= 50) ids.push("fifty-prs");
   if (state.setsCompleted >= 100) ids.push("hundred-sets");
+  if (state.workoutsCompleted >= 100) ids.push("hundred-workouts");
   return ids;
 };
 
