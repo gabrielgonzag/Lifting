@@ -6,7 +6,15 @@ import type { AppView, WorkoutPlan } from "../types";
 import { inCurrentWeek } from "../utils/format";
 import { recordLabel, recordValueLabel } from "../utils/records";
 
-const weekLabels = ["S", "T", "Q", "Q", "S", "S", "D"];
+const weekDays = [
+  { day: 1, label: "S" },
+  { day: 2, label: "T" },
+  { day: 3, label: "Q" },
+  { day: 4, label: "Q" },
+  { day: 5, label: "S" },
+  { day: 6, label: "S" },
+  { day: 0, label: "D" },
+];
 
 const daysAgo = (date: string) => {
   const days = Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000);
@@ -46,16 +54,17 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
   return (
     <div className="min-h-full overflow-auto">
       <div className="mx-auto flex max-w-5xl flex-col gap-5 px-5 py-6 pb-24 lg:px-8 lg:py-8">
-        <header className="anim-rise">
-          <p className="text-sm font-medium capitalize text-[var(--fg-3)]">
-            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-          </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-[-0.035em] sm:text-4xl">
-            {greet}, <span className="text-[var(--fg-2)]">{user?.name.split(" ")[0] ?? "atleta"}.</span>
-          </h1>
+        <header className="anim-rise flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium capitalize text-[var(--fg-3)]">
+              {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+            </p>
+            <h1 className="mt-1 text-3xl font-bold tracking-[-0.035em] sm:text-4xl">
+              {greet}, <span className="text-[var(--fg-2)]">{user?.name.split(" ")[0] ?? "atleta"}.</span>
+            </h1>
+          </div>
+          <LevelProgressCard achievements={achievements.length} level={level} percent={levelProgress} totalXp={totalXp} xp={xp} />
         </header>
-
-        <LevelProgressCard achievements={achievements.length} level={level} percent={levelProgress} totalXp={totalXp} xp={xp} />
 
         {continuePlan ? (
           <ContinueCard plan={continuePlan} lastDate={lastSession?.date ?? continuePlan.updatedAt} onContinue={() => onNavigate("workout")} />
@@ -91,10 +100,10 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
             </span>
           </div>
           <div className="flex gap-2">
-            {weekLabels.map((label, index) => {
-              const done = weeklySessions.some((session) => new Date(session.date).getDay() === index);
+            {weekDays.map(({ day, label }) => {
+              const done = weeklySessions.some((session) => new Date(session.date).getDay() === day);
               return (
-                <div className="grid flex-1 gap-1.5 text-center" key={`${label}-${index}`}>
+                <div className="grid flex-1 gap-1.5 text-center" key={`${label}-${day}`}>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fg-4)]">{label}</span>
                   <span className="h-8 rounded-md border" style={{ background: done ? "var(--lime)" : "var(--card)", borderColor: done ? "transparent" : "var(--border)" }} />
                 </div>
@@ -120,30 +129,28 @@ export default function Home({ onNavigate }: { onNavigate: (view: AppView) => vo
 
 function LevelProgressCard({ achievements, level, percent, totalXp, xp }: { achievements: number; level: number; percent: number; totalXp: number; xp: number }) {
   return (
-    <section className="anim-rise overflow-hidden rounded-[18px] border border-[var(--lime-line)] bg-[linear-gradient(135deg,rgba(190,255,0,.14),rgba(24,24,24,.95)_44%,rgba(10,10,10,.98))] p-5">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="label text-[var(--lime)]">Progressao</p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <h2 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">LVL {level}</h2>
-            <span className="text-sm font-bold uppercase tracking-wider text-[var(--fg-2)]">{levelTitle(level)}</span>
+    <section className="w-full rounded-xl border border-[var(--lime-line)] bg-[linear-gradient(135deg,rgba(190,255,0,.11),rgba(24,24,24,.92))] p-3 sm:w-72">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-wider text-[var(--lime)]">Level</p>
+          <div className="mt-1 flex min-w-0 items-baseline gap-2">
+            <h2 className="text-xl font-black tracking-[-0.04em]">LVL {level}</h2>
+            <span className="truncate text-[11px] font-bold uppercase tracking-wider text-[var(--fg-2)]">{levelTitle(level)}</span>
           </div>
-          <p className="mt-1 text-sm text-[var(--fg-3)]">
-            {xp} / {XP_PER_LEVEL} XP para o proximo nivel
-          </p>
         </div>
-        <div className="grid gap-1 text-left sm:text-right">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-3)]">Total</p>
-          <p className="text-xl font-bold">{totalXp} XP</p>
-          <p className="text-xs text-[var(--fg-3)]">{achievements} conquistas</p>
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--fg-3)]">{totalXp} XP</p>
+          <p className="text-[10px] text-[var(--fg-3)]">{achievements} conquistas</p>
         </div>
       </div>
-      <div className="mt-5">
-        <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[var(--fg-3)]">
-          <span>Progresso do nivel</span>
+      <div className="mt-3">
+        <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[var(--fg-3)]">
+          <span>
+            {xp}/{XP_PER_LEVEL} XP
+          </span>
           <span>{percent}%</span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-black/30">
+        <div className="h-2 overflow-hidden rounded-full border border-white/10 bg-black/30">
           <span className="block h-full rounded-full bg-[linear-gradient(90deg,var(--lime),#f8ff6a)] transition-all duration-700" style={{ width: `${percent}%` }} />
         </div>
       </div>

@@ -56,13 +56,13 @@ function UserChip({ user }: { user?: User }) {
         {initials}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
-          <span className="shrink-0 rounded-md bg-[var(--lime)] px-1.5 py-0.5 text-[9px] font-black uppercase text-zinc-950">LVL {level}</span>
+        <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
+        <div className="mt-1 flex min-w-0 items-center gap-1.5">
+          <span className="shrink-0 rounded bg-[var(--lime)] px-1.5 py-0.5 text-[8px] font-black uppercase leading-none text-zinc-950">LVL {level}</span>
+          <p className="min-w-0 truncate text-[9px] font-bold uppercase tracking-wider text-[var(--lime)]">
+            {levelTitle(level)} - {user?.plan ?? "entry"}
+          </p>
         </div>
-        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--lime)]">
-          {levelTitle(level)} · {user?.plan ?? "entry"}
-        </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
           <span className="block h-full rounded-full bg-[var(--lime)] transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
