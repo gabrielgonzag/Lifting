@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { LegacyTitles } from "../components/profile/LegacyTitles";
 import { ProfileAchievements } from "../components/profile/ProfileAchievements";
 import { ProfileEditForm } from "../components/profile/ProfileEditForm";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
@@ -10,6 +11,7 @@ import { useGamificationStore } from "../features/gamification/useGamificationSt
 import { useAppStore } from "../store/useAppStore";
 import { useAuthStore } from "../store/useAuthStore";
 import type { EditableUserProfile, User } from "../types";
+import { sessionVolume } from "../utils/format";
 
 const statusLabel: Record<User["status"], string> = {
   active: "Ativo",
@@ -33,6 +35,8 @@ export default function Profile() {
     if (!best) return "Sem PR ainda";
     return exercises.find((exercise) => exercise.id === best.exerciseId)?.name ?? best.exerciseName;
   }, [records]);
+
+  const totalVolume = useMemo(() => sessions.reduce((total, session) => total + sessionVolume(session), 0), [sessions]);
 
   if (!user) {
     return (
@@ -99,6 +103,15 @@ export default function Profile() {
         {editing ? <ProfileEditForm errors={errors} isSaving={saving} onCancel={() => setEditing(false)} onSave={save} user={user} /> : null}
 
         <ProfileStats stats={stats} />
+        <LegacyTitles
+          stats={{
+            level: progression.level,
+            prs: progression.prs || records.length,
+            streak: progression.streak,
+            volume: totalVolume,
+            workouts: progression.workoutsCompleted || sessions.length,
+          }}
+        />
         <ProfileAchievements achievementIds={progression.achievements} />
       </div>
     </div>

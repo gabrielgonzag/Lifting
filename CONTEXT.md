@@ -313,6 +313,7 @@ src/components/profile/ProfileStats.tsx
 src/components/profile/ProfileAchievements.tsx
 src/components/profile/ProfileEditForm.tsx
 src/components/profile/AvatarUploader.tsx
+src/components/profile/LegacyTitles.tsx
 ```
 
 Service/repository:
@@ -330,6 +331,7 @@ Regras:
 - o menu mobile do avatar mostra nome, email, plano, Meu Perfil, Configuracoes e Sair;
 - a topbar mobile do avatar usa animacao de slide e nao altera o layout desktop.
 - perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
+- perfil exibe tambem Bodybuilding Legacy Titles, com titulo atual, tier, progresso, proximos titulos e destaque para MR. OLYMPIA;
 - usuario pode editar nome, username, avatar e bio;
 - username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
 - bio tem limite de 160 caracteres;
@@ -572,6 +574,7 @@ Arquivos:
 
 ```txt
 src/features/gamification/useGamificationStore.ts
+src/features/gamification/titles.ts
 src/features/achievements/achievements.ts
 ```
 
@@ -633,6 +636,38 @@ Persistencia atual da gamificacao:
 - `useGamificationStore` usa `localStorage` na chave `lifting_user_progression`;
 - e aceitavel por enquanto por estar centralizado em store;
 - futuro ideal: tabelas `user_progression`, `user_achievements`, `user_streaks`, `workout_xp_history`.
+
+## Bodybuilding Legacy Titles
+
+Arquivos:
+
+```txt
+src/features/gamification/titles.ts
+src/components/profile/LegacyTitles.tsx
+src/features/gamification/titles.test.ts
+```
+
+Direcao:
+
+- classificar o usuario em titulos de progressao inspirados em musculacao/bodybuilding;
+- transmitir legado fisico, disciplina, prestigio e cultura bodybuilding;
+- preparar integracao futura com Timeline de Evolucao Fisica, Workout Replay, Ghost Progress, Workout DNA e Legacy System.
+
+Tiers:
+
+```txt
+Tier 1 - Construcao
+Tier 2 - Evolucao
+Tier 3 - Dominio
+Tier 4 - Legado
+Tier 5 - Absoluto
+```
+
+Regras:
+
+- titulos usam requisitos por level, workouts, PRs, streak ou volume;
+- `MR. OLYMPIA` e mythic, tier 5, desbloqueado apenas com volume historico extremo;
+- componente no perfil calcula titulo atual, proximo titulo, titulos desbloqueados e marcos lendarios usando progresso e sessoes carregadas.
 
 ## Progresso
 

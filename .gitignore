@@ -6,3 +6,8 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Local product/business planning docs
+LIFTING_USER_FLOWS.txt
+LIFTING_AUTH_BUSINESS_RULES.txt
+LIFTING_IMPLEMENTED_BUSINESS_RULES.txt
