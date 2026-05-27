@@ -1,5 +1,6 @@
 import { userRepository } from "../repositories/userRepository";
 import type { EditableUserProfile, User } from "../types";
+import { auditService } from "./auditService";
 import { hasSupabaseConfig } from "./databaseClient";
 
 export type ProfileValidationResult = {
@@ -14,6 +15,7 @@ const maxAvatarSize = 2 * 1024 * 1024;
 
 const cleanText = (value?: string) => value?.trim().replace(/\s+/g, " ") ?? "";
 const cleanUsername = (value?: string) => cleanText(value).toLowerCase();
+const protectedProfileFields = new Set(["createdAt", "emailVerified", "plan", "role", "status", "updatedAt"]);
 
 export const profileService = {
   async validateProfile(userId: string, input: Partial<EditableUserProfile>): Promise<ProfileValidationResult> {
@@ -48,9 +50,22 @@ export const profileService = {
   },
 
   async updateProfile(user: User, input: Partial<EditableUserProfile>) {
+    const attemptedProtectedFields = Object.keys(input).filter((key) => protectedProfileFields.has(key));
+    if (attemptedProtectedFields.length) {
+      await auditService.record({
+        eventType: attemptedProtectedFields.some((field) => field === "role") ? "role_change_attempt" : "plan_change_attempt",
+        metadata: { fields: attemptedProtectedFields.join(",") },
+        severity: "critical",
+        userId: user.id,
+      });
+      return { ok: false as const, errors: { name: "Campos protegidos nao podem ser alterados pelo app." } };
+    }
     const validation = await this.validateProfile(user.id, input);
     if (!validation.ok || !validation.value) return { ok: false as const, errors: validation.errors };
     const next = await userRepository.updateProfile(user.id, validation.value);
+    if (next) {
+      await auditService.record({ eventType: "profile_updated", severity: "info", userId: user.id });
+    }
     return next ? { ok: true as const, user: next } : { ok: false as const, errors: { name: "Nao foi possivel salvar o perfil." } };
   },
 

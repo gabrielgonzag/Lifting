@@ -16,11 +16,15 @@ const rarityClass: Record<LegacyTitle["rarity"], string> = {
   rare: "border-sky-300/25 bg-sky-300/[.07] text-sky-100",
 };
 
-export function LegacyTitles({ stats }: { stats: LegacyTitleStats }) {
+export function LegacyTitles({ officialTitleIds, stats }: { officialTitleIds?: string[]; stats: LegacyTitleStats }) {
   const progress = getLegacyTitleProgress(stats);
-  const nextTitles = legacyTitles.filter((title) => !progress.unlocked.some((item) => item.id === title.id)).slice(0, 3);
+  const officialUnlocked = officialTitleIds?.length
+    ? legacyTitles.filter((title) => officialTitleIds.includes(title.id))
+    : progress.unlocked;
+  const current = officialUnlocked.at(-1) ?? progress.current;
+  const nextTitles = legacyTitles.filter((title) => !officialUnlocked.some((item) => item.id === title.id)).slice(0, 3);
   const legendaryTitles = legacyTitles.filter((title) => title.tier >= 4);
-  const isMythic = progress.current.tier === 5;
+  const isMythic = current.tier === 5;
 
   return (
     <section className="relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(24,24,24,.98),rgba(10,10,10,.98))] p-5 sm:p-6">
@@ -32,13 +36,13 @@ export function LegacyTitles({ stats }: { stats: LegacyTitleStats }) {
           <p className="label">Bodybuilding Legacy</p>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <h2 className={`text-4xl font-black tracking-[-0.06em] sm:text-5xl ${isMythic ? "text-[var(--lime)]" : "text-[var(--fg)]"}`}>
-              {progress.current.name}
+              {current.name}
             </h2>
-            <span className={`mb-1 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${rarityClass[progress.current.rarity]}`}>
-              Tier {progress.current.tier} - {legacyTierLabel(progress.current.tier)}
+            <span className={`mb-1 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${rarityClass[current.rarity]}`}>
+              Tier {current.tier} - {legacyTierLabel(current.tier)}
             </span>
           </div>
-          <p className="mt-3 max-w-xl text-sm text-[var(--fg-3)]">{progress.current.description}</p>
+          <p className="mt-3 max-w-xl text-sm text-[var(--fg-3)]">{current.description}</p>
           <p className="mt-5 text-lg font-black tracking-[-0.03em] text-[var(--fg)]">
             {isMythic ? "Seu legado agora e eterno." : "Seu legado esta sendo construido."}
           </p>
@@ -74,10 +78,10 @@ export function LegacyTitles({ stats }: { stats: LegacyTitleStats }) {
         <div>
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-xs font-black uppercase tracking-wider text-[var(--fg-3)]">Titulos desbloqueados</p>
-            <span className="badge">{progress.unlocked.length}/{legacyTitles.length}</span>
+            <span className="badge">{officialUnlocked.length}/{legacyTitles.length}</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {progress.unlocked.slice(-6).reverse().map((title) => <TitlePill key={title.id} title={title} unlocked />)}
+            {officialUnlocked.slice(-6).reverse().map((title) => <TitlePill key={title.id} title={title} unlocked />)}
           </div>
         </div>
 
@@ -102,7 +106,7 @@ export function LegacyTitles({ stats }: { stats: LegacyTitleStats }) {
             <TitlePill
               key={title.id}
               title={title}
-              unlocked={progress.unlocked.some((item) => item.id === title.id)}
+              unlocked={officialUnlocked.some((item) => item.id === title.id)}
             />
           ))}
         </div>

@@ -1,15 +1,18 @@
 import { create } from "zustand";
-import { achievementById } from "../achievements/achievements";
+import { gamificationService } from "../../services/gamificationService";
 
 export type UserProgression = {
+  currentTitleId: string;
   level: number;
   xp: number;
   totalXp: number;
+  totalVolume: number;
   streak: number;
   workoutsCompleted: number;
   prs: number;
   setsCompleted: number;
   achievements: string[];
+  titleIds: string[];
 };
 
 type ProgressionEvent = {
@@ -19,37 +22,28 @@ type ProgressionEvent = {
 };
 
 type GamificationState = UserProgression & {
-  awardWorkoutCompleted: (payload: { prs: number; sets: number; streak?: number; unlocked?: string[] }) => ProgressionEvent;
+  isSyncing: boolean;
+  lastSyncedUserId?: string;
+  awardWorkoutCompleted: (userId?: string) => Promise<ProgressionEvent>;
+  clearProgression: (userId?: string) => void;
   resetProgression: () => void;
+  syncProgression: (userId?: string) => Promise<UserProgression>;
 };
 
-const storageKey = "lifting_user_progression";
 export const XP_PER_LEVEL = 500;
 
 const emptyProgression: UserProgression = {
   achievements: [],
+  currentTitleId: "iniciante",
   level: 1,
   prs: 0,
   setsCompleted: 0,
   streak: 0,
+  titleIds: ["iniciante"],
+  totalVolume: 0,
   totalXp: 0,
   workoutsCompleted: 0,
   xp: 0,
-};
-
-const readProgression = () => {
-  if (typeof window === "undefined") return emptyProgression;
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    return raw ? { ...emptyProgression, ...(JSON.parse(raw) as Partial<UserProgression>) } : emptyProgression;
-  } catch {
-    return emptyProgression;
-  }
-};
-
-const persistProgression = (state: UserProgression) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey, JSON.stringify(state));
 };
 
 export const levelTitle = (level: number) => {
@@ -60,59 +54,43 @@ export const levelTitle = (level: number) => {
   return "Lenda";
 };
 
-const normalizeXp = (totalXp: number) => ({
-  level: Math.floor(totalXp / XP_PER_LEVEL) + 1,
-  xp: totalXp % XP_PER_LEVEL,
-});
-
-const unlockCandidates = (state: UserProgression) => {
-  const ids: string[] = [];
-  if (state.workoutsCompleted >= 1) ids.push("first-workout");
-  if (state.streak >= 7) ids.push("seven-day-streak");
-  if (state.streak >= 30) ids.push("thirty-day-streak");
-  if (state.prs >= 10) ids.push("ten-prs");
-  if (state.prs >= 50) ids.push("fifty-prs");
-  if (state.setsCompleted >= 100) ids.push("hundred-sets");
-  if (state.workoutsCompleted >= 100) ids.push("hundred-workouts");
-  return ids;
-};
-
 export const useGamificationStore = create<GamificationState>()((set, get) => ({
-  ...readProgression(),
-  awardWorkoutCompleted: ({ prs, sets, streak, unlocked = [] }) => {
+  ...emptyProgression,
+  isSyncing: false,
+  awardWorkoutCompleted: async (userId) => {
     const before = get();
-    const baseXp = 100;
-    const prXp = prs * 50;
-    const nextBase: UserProgression = {
-      achievements: before.achievements,
-      level: before.level,
-      prs: before.prs + prs,
-      setsCompleted: before.setsCompleted + sets,
-      streak: Math.max(before.streak, streak ?? before.streak),
-      totalXp: before.totalXp,
-      workoutsCompleted: before.workoutsCompleted + 1,
-      xp: before.xp,
+    const next = await get().syncProgression(userId ?? before.lastSyncedUserId);
+    return {
+      achievementIds: next.achievements.filter((id) => !before.achievements.includes(id)),
+      leveledUp: next.level > before.level,
+      xpGained: Math.max(0, next.totalXp - before.totalXp),
     };
-    const candidates = [...unlockCandidates(nextBase), ...unlocked];
-    const achievementIds = candidates.filter((id) => !before.achievements.includes(id));
-    const achievementXp = achievementIds.reduce((total, id) => total + (achievementById.get(id)?.xpReward ?? 0), 0);
-    const xpGained = baseXp + prXp + achievementXp;
-    const totalXp = before.totalXp + xpGained;
-    const normalized = normalizeXp(totalXp);
-    const next: UserProgression = {
-      ...nextBase,
-      ...normalized,
-      achievements: [...new Set([...before.achievements, ...achievementIds])],
-      totalXp,
-    };
-
-    persistProgression(next);
-    set(next);
-    return { achievementIds, leveledUp: next.level > before.level, xpGained };
+  },
+  clearProgression: (userId) => {
+    gamificationService.clearCache(userId);
+    set({ ...emptyProgression, isSyncing: false, lastSyncedUserId: undefined });
   },
   resetProgression: () => {
-    persistProgression(emptyProgression);
-    set(emptyProgression);
+    gamificationService.clearCache();
+    set({ ...emptyProgression, isSyncing: false, lastSyncedUserId: undefined });
+  },
+  syncProgression: async (userId) => {
+    if (!userId) {
+      set({ ...emptyProgression, isSyncing: false, lastSyncedUserId: undefined });
+      return emptyProgression;
+    }
+    const cached = gamificationService.cacheForUser(userId);
+    if (cached) set({ ...cached, lastSyncedUserId: userId });
+    set({ isSyncing: true, lastSyncedUserId: userId });
+    try {
+      const progression = await gamificationService.syncProgression(userId);
+      set({ ...progression, isSyncing: false, lastSyncedUserId: userId });
+      return progression;
+    } catch {
+      const fallback = cached ?? emptyProgression;
+      set({ ...fallback, isSyncing: false, lastSyncedUserId: userId });
+      return fallback;
+    }
   },
 }));
 

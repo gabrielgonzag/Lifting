@@ -16,7 +16,9 @@ import { Card } from "../components/ui/card";
 import { Textarea } from "../components/ui/input";
 import { exercises } from "../data/exercises";
 import { coachTrainingService } from "../services/coachTrainingService";
+import { useGamificationStore } from "../features/gamification/useGamificationStore";
 import { useAppStore } from "../store/useAppStore";
+import { useAuthStore } from "../store/useAuthStore";
 import type { CoachTrainingContext, SharedWorkoutPlan, WorkoutPlan, WorkoutSession } from "../types";
 import { makeId } from "../utils/id";
 
@@ -79,6 +81,8 @@ const toNumber = (value: string) => (value === "" ? 0 : Number(value));
 export default function Workout() {
   const plans = useAppStore((state) => state.plans);
   const saveSession = useAppStore((state) => state.saveSession);
+  const user = useAuthStore((state) => state.user);
+  const syncProgression = useGamificationStore((state) => state.syncProgression);
   const [coachContext, setCoachContext] = useState<CoachTrainingContext | null>(() => coachTrainingService.getActiveContext());
   const coachPlans = coachContext ? coachTrainingService.listActiveStudentPlans(coachContext) : [];
   const isCoachSession = Boolean(coachContext);
@@ -180,6 +184,7 @@ export default function Workout() {
         coachContext && selectedCoachPlan
           ? Number(coachTrainingService.completeWorkout({ context: coachContext, plan: selectedCoachPlan, session }).ok)
           : await saveSession(session);
+      if (!coachContext && user?.id) void syncProgression(user.id);
       setFinished(session);
       toast(isCoachSession ? "Treino do aluno sincronizado." : records ? `${records} novo${records === 1 ? "" : "s"} PR${records === 1 ? "" : "s"} detectado${records === 1 ? "" : "s"}.` : "Treino salvo.");
     } catch {

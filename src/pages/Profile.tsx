@@ -36,7 +36,10 @@ export default function Profile() {
     return exercises.find((exercise) => exercise.id === best.exerciseId)?.name ?? best.exerciseName;
   }, [records]);
 
-  const totalVolume = useMemo(() => sessions.reduce((total, session) => total + sessionVolume(session), 0), [sessions]);
+  const totalVolume = useMemo(
+    () => progression.totalVolume || sessions.reduce((total, session) => total + sessionVolume(session), 0),
+    [progression.totalVolume, sessions],
+  );
 
   if (!user) {
     return (
@@ -104,6 +107,7 @@ export default function Profile() {
 
         <ProfileStats stats={stats} />
         <LegacyTitles
+          officialTitleIds={progression.titleIds}
           stats={{
             level: progression.level,
             prs: progression.prs || records.length,

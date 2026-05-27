@@ -17,4 +17,6 @@ export type DatabaseCollection =
   | "shared_workout_plans"
   | "coach_notes"
   | "coach_student_progress"
-  | "coach_training_context";
+  | "coach_training_context"
+  | "security_audit_logs"
+  | "user_progression";

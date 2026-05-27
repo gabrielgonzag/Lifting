@@ -6,6 +6,8 @@ import { recordLabel, recordValueLabel } from "../utils/records";
 const escapeHtml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+const safeCssColor = (value: string) => (/^#[0-9a-f]{6}$/i.test(value.trim()) ? value.trim() : "#B7F34D");
+
 export function printFitnessReport({
   plans,
   sessions,
@@ -26,7 +28,7 @@ export function printFitnessReport({
         .filter(Boolean)
         .map((name) => `<li>${escapeHtml(name!)}</li>`)
         .join("");
-      return `<article><span class="bar" style="background:${plan.color}"></span><h3>${escapeHtml(plan.title)}</h3><p>${escapeHtml(plan.description || "Ficha sem descricao.")}</p><ul>${exerciseNames}</ul></article>`;
+      return `<article><span class="bar" style="background:${safeCssColor(plan.color)}"></span><h3>${escapeHtml(plan.title)}</h3><p>${escapeHtml(plan.description || "Ficha sem descricao.")}</p><ul>${exerciseNames}</ul></article>`;
     })
     .join("");
   const historyMarkup = sessions

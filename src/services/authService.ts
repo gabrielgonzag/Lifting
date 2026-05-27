@@ -1,6 +1,7 @@
 import { userRepository } from "../repositories/userRepository";
 import type { AuthResult, LoginInput, RegisterInput } from "../types";
 import { canAccessCoach } from "../utils/validators/permissionValidator";
+import { auditService } from "./auditService";
 import { hasSupabaseConfig, supabase } from "./databaseClient";
 import { validationService } from "./validationService";
 
@@ -50,9 +51,10 @@ const waitForSupabaseProfile = async (userId: string) => {
 const validateSupabaseProfile = async (userId: string): Promise<AuthResult> => {
   const user = await waitForSupabaseProfile(userId);
   if (!user) return { ok: false, message: "Nao foi possivel carregar seu perfil. Tente sair e entrar novamente." };
-  if (user.status === "suspended") {
-    await supabase?.auth.signOut();
-    return { ok: false, message: "Sua conta esta suspensa. Entre em contato com o suporte." };
+    if (user.status === "suspended") {
+      await auditService.record({ eventType: "account_suspended", severity: "warning", userId: user.id });
+      await supabase?.auth.signOut();
+      return { ok: false, message: "Sua conta esta suspensa. Entre em contato com o suporte." };
   }
   if (!user.emailVerified || user.status === "pending_verification") {
     return {
@@ -78,7 +80,10 @@ export const authService = {
     if (!code) return { ok: false, message: "Retorno do Google sem codigo de autenticacao." } satisfies AuthResult;
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return { ok: false, message: error.message } satisfies AuthResult;
+    if (error) {
+      await auditService.record({ eventType: "login_failed", metadata: { provider: "google" }, severity: "warning" });
+      return { ok: false, message: error.message } satisfies AuthResult;
+    }
 
     const { data } = await supabase.auth.getUser();
     return data.user ? validateSupabaseProfile(data.user.id) : ({ ok: false, message: "Sessao Google nao encontrada." } satisfies AuthResult);
@@ -104,6 +109,11 @@ export const authService = {
     });
 
     if (error || !data.user) {
+      await auditService.record({
+        eventType: "login_failed",
+        metadata: { email: emailValidation.normalized },
+        severity: "warning",
+      });
       const lowerMessage = error?.message.toLowerCase() ?? "";
       if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("confirm")) {
         return {
@@ -118,8 +128,17 @@ export const authService = {
 
     const result = await validateSupabaseProfile(data.user.id);
     if (asProfessional && result.ok && result.user && !canAccessCoach(result.user)) {
+      await auditService.record({
+        eventType: "access_denied",
+        metadata: { requested: "professional_login" },
+        severity: "warning",
+        userId: result.user.id,
+      });
       await supabase.auth.signOut();
       return { ok: false, message: "Essa conta nao possui acesso profissional." };
+    }
+    if (result.ok && result.user) {
+      await auditService.record({ eventType: "login_success", severity: "info", userId: result.user.id });
     }
     return result;
   },
@@ -146,25 +165,31 @@ export const authService = {
     if (!supabase) return { ok: false, message: missingSupabaseMessage };
 
     const email = emailValidation.normalized;
-    const plan = input.plan ?? (input.role === "professional" ? "coach" : "entry");
     const { data, error } = await supabase.auth.signUp({
       email,
       password: input.password,
       options: {
         data: {
           name,
-          role: input.role,
-          plan,
+          requested_account_type: input.role === "professional" ? "professional" : "casual",
         },
       },
     });
 
-    if (error) return { ok: false, email, message: safeSignupError(error.message) };
+    if (error) {
+      await auditService.record({
+        eventType: "login_failed",
+        metadata: { email, phase: "signup" },
+        severity: "warning",
+      });
+      return { ok: false, email, message: safeSignupError(error.message) };
+    }
     if (!data.user) return { ok: false, message: "Nao foi possivel criar sua conta." };
     if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       return { ok: false, email, message: duplicateEmailMessage };
     }
     if (!data.session) {
+      await auditService.record({ eventType: "signup", metadata: { email }, severity: "info", userId: data.user.id });
       return {
         ok: true,
         email,
@@ -183,6 +208,7 @@ export const authService = {
         requiresEmailConfirmation: true,
       };
     }
+    if (profile) await auditService.record({ eventType: "signup", severity: "info", userId: profile.id });
     return profile ? { ok: true, user: profile } : { ok: false, message: "Conta criada. Entre novamente." };
   },
   async resendEmailConfirmation(email: string): Promise<AuthResult> {
@@ -210,6 +236,11 @@ export const authService = {
     if (!supabase) return { ok: false, message: missingSupabaseMessage };
 
     const { error } = await supabase.auth.resetPasswordForEmail(emailValidation.normalized);
+    await auditService.record({
+      eventType: "password_reset_requested",
+      metadata: { email: emailValidation.normalized },
+      severity: "info",
+    });
     return error
       ? { ok: false, message: error.message }
       : { ok: true, message: "Se houver uma conta, as instrucoes serao enviadas." };
@@ -218,6 +249,7 @@ export const authService = {
     if (supabase) {
       await supabase.auth.signOut();
     }
+    await auditService.record({ eventType: "logout", severity: "info" });
     userRepository.setSessionUserId();
   },
 };

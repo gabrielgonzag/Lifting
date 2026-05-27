@@ -83,12 +83,12 @@ describe("profile service", () => {
     expect(result.ok ? "" : result.errors.username).toContain("uso");
   });
 
-  it("does not allow role, plan, status, goal or experience to be changed through profile updates", async () => {
+  it("blocks protected role, plan and status updates through profile updates", async () => {
     const { profileService } = await import("./profileService");
     const { userRepository } = await import("../repositories/userRepository");
     const user = userRepository.create(baseUser("user-a", "gabriel"), "secret");
 
-    await profileService.updateProfile(user, {
+    const result = await profileService.updateProfile(user, {
       name: "Gabriel Seguro",
       experienceLevel: "atleta",
       goal: "forca",
@@ -99,7 +99,8 @@ describe("profile service", () => {
     } as Parameters<typeof profileService.updateProfile>[1] & Record<string, string>);
 
     const updated = userRepository.getPublicById("user-a");
-    expect(updated?.name).toBe("Gabriel Seguro");
+    expect(result.ok).toBe(false);
+    expect(updated?.name).toBe("Gabriel Gonzaga");
     expect(updated?.role).toBe("casual");
     expect(updated?.plan).toBe("entry");
     expect(updated?.status).toBe("active");

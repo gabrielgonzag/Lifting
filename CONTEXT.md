@@ -114,6 +114,7 @@ Regras:
 - persistencia passa por repositories;
 - regras ficam em services, guards ou validators;
 - UI consome stores/services e renderiza estados;
+- dados criticos de progressao, permissoes, role, plan, status e auditoria nao devem ser decididos pelo frontend;
 - nao criar bypass admin em producao.
 
 ## Autenticacao
@@ -574,8 +575,11 @@ Arquivos:
 
 ```txt
 src/features/gamification/useGamificationStore.ts
+src/services/gamificationService.ts
+src/repositories/gamificationRepository.ts
 src/features/gamification/titles.ts
 src/features/achievements/achievements.ts
+supabase/migrations/20260527190000_secure_gamification_and_audit.sql
 ```
 
 Progressao:
@@ -585,8 +589,11 @@ UserProgression {
   level;
   xp;
   totalXp;
+  totalVolume;
   streak;
   achievements;
+  titleIds;
+  currentTitleId;
 }
 ```
 
@@ -633,9 +640,11 @@ legendary
 
 Persistencia atual da gamificacao:
 
-- `useGamificationStore` usa `localStorage` na chave `lifting_user_progression`;
-- e aceitavel por enquanto por estar centralizado em store;
-- futuro ideal: tabelas `user_progression`, `user_achievements`, `user_streaks`, `workout_xp_history`.
+- fonte oficial deve ser Supabase, via tabelas `user_progression`, `user_achievements`, `user_titles`, `user_streaks` e `user_xp_history`;
+- `useGamificationStore` chama `gamificationService.syncProgression(userId)`;
+- o RPC `sync_user_progression()` recalcula XP, nivel, streak, conquistas e titulos com base em `workout_sessions` e `personal_records` pertencentes ao usuario autenticado;
+- cache local existe apenas via `databaseClient` para UX/fallback, nunca como fonte oficial;
+- o frontend nao deve desbloquear conquista, titulo ou XP oficial por conta propria.
 
 ## Bodybuilding Legacy Titles
 
@@ -667,7 +676,39 @@ Regras:
 
 - titulos usam requisitos por level, workouts, PRs, streak ou volume;
 - `MR. OLYMPIA` e mythic, tier 5, desbloqueado apenas com volume historico extremo;
-- componente no perfil calcula titulo atual, proximo titulo, titulos desbloqueados e marcos lendarios usando progresso e sessoes carregadas.
+- componente no perfil exibe titulos oficiais vindos de `useGamificationStore.titleIds`;
+- fallback visual pode calcular progresso local, mas desbloqueio oficial vem do RPC/tabelas de gamificacao.
+
+## Auditoria e Hardening
+
+Arquivos:
+
+```txt
+src/services/auditService.ts
+src/repositories/auditRepository.ts
+supabase/migrations/20260527190000_secure_gamification_and_audit.sql
+```
+
+Eventos auditados:
+
+- login com sucesso/falha;
+- signup;
+- logout;
+- reset de senha solicitado;
+- acesso negado por guard;
+- tentativa de login profissional sem permissao;
+- conta suspensa;
+- perfil atualizado;
+- tentativa de alterar campos protegidos;
+- sincronizacao de gamificacao.
+
+Regras:
+
+- `auditService` sanitiza metadata e remove `password`, `token`, `refresh_token`, `access_token` e `secret`;
+- falha de auditoria nao deve bloquear o fluxo do usuario;
+- migration cria `security_audit_logs` com RLS;
+- migration adiciona trigger para bloquear update publico de `role`, `plan`, `status`, `email_verified` e `created_at` em `profiles`;
+- upgrades de plano/role/status precisam vir de backend, admin, pagamento confirmado ou processo interno seguro.
 
 ## Progresso
 
@@ -808,6 +849,7 @@ npm run build - passou
 20260525120000_google_only_profiles.sql
 20260525153000_add_manual_pr_sets.sql
 20260526013000_add_profile_details.sql
+20260527190000_secure_gamification_and_audit.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
@@ -885,6 +927,8 @@ O sistema esta em transicao de app local para produto SaaS fitness:
 - fichas e treinos persistidos por usuario;
 - PR substituiu RPE no fluxo de treino;
 - progresso com graficos e insights;
+- gamificacao sincroniza XP, nivel, conquistas e titulos oficiais via Supabase/RPC;
+- auditoria de eventos sensiveis foi adicionada com sanitizacao de metadata;
 - painel profissional preparado;
 - perfil de usuario com edicao segura e estatisticas pessoais;
 - rotas protegidas;
@@ -896,6 +940,6 @@ Prioridades atuais:
 2. validar auth Google e email/senha em producao;
 3. alinhar backend para criacao segura de profissionais/coaches se esse fluxo for liberado;
 4. evoluir painel do coach para destacar PRs dos alunos;
-5. persistir gamificacao no Supabase quando o backend estiver pronto;
-6. aplicar migration `20260526013000_add_profile_details.sql` no Supabase remoto;
+5. aplicar migrations `20260526013000_add_profile_details.sql` e `20260527190000_secure_gamification_and_audit.sql` no Supabase remoto;
+6. validar a RPC `sync_user_progression()` em producao apos aplicar migrations;
 7. continuar migrando telas remanescentes para o design system novo.

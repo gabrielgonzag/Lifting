@@ -111,8 +111,7 @@ describe("auth service", () => {
       options: {
         data: {
           name: "Gabriel",
-          plan: "entry",
-          role: "casual",
+          requested_account_type: "casual",
         },
       },
     });

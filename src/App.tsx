@@ -3,6 +3,8 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import { useAppStore } from "./store/useAppStore";
 import { useAuthStore } from "./store/useAuthStore";
+import { useGamificationStore } from "./features/gamification/useGamificationStore";
+import { auditService } from "./services/auditService";
 import type { AppRoute, AppView } from "./types";
 import { appViews, guardRoute, parseHashRoute, routeForUser } from "./guards/routeGuards";
 
@@ -32,6 +34,8 @@ export default function App() {
   const isLoading = useAuthStore((state) => state.isLoading);
   const logout = useAuthStore((state) => state.logout);
   const loadUserData = useAppStore((state) => state.loadUserData);
+  const syncProgression = useGamificationStore((state) => state.syncProgression);
+  const clearProgression = useGamificationStore((state) => state.clearProgression);
 
   const navigate = (next: AppRoute) => {
     if (window.location.pathname === "/auth/callback") {
@@ -51,12 +55,22 @@ export default function App() {
 
   useEffect(() => {
     loadUserData(user?.id);
-  }, [loadUserData, user?.id]);
+    if (user?.id) void syncProgression(user.id);
+    else clearProgression();
+  }, [clearProgression, loadUserData, syncProgression, user?.id]);
 
   const guardedRoute = guardRoute({ isAuthenticated, route, user });
 
   useEffect(() => {
-    if (!isLoading && guardedRoute !== route) navigate(guardedRoute);
+    if (!isLoading && guardedRoute !== route) {
+      void auditService.record({
+        eventType: "access_denied",
+        metadata: { attemptedRoute: route, redirectedTo: guardedRoute },
+        severity: user?.status === "suspended" ? "critical" : "warning",
+        userId: user?.id,
+      });
+      navigate(guardedRoute);
+    }
   }, [guardedRoute, isLoading, route]);
 
   if (isLoading) {
