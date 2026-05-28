@@ -4,7 +4,7 @@ Este arquivo e a referencia principal para novas sessoes no projeto LIFTO. Leia 
 
 ## Produto
 
-LIFTO, antes chamado internamente de CONTENT.ENV e LIFTING, e um app fitness premium para:
+LIFTO e o novo branding oficial do projeto anteriormente chamado LIFTING, antes chamado internamente de CONTENT.ENV. E um app fitness premium para:
 
 - criar fichas de treino;
 - escolher exercicios por grupo muscular;
@@ -205,10 +205,10 @@ Configuracao esperada no Supabase:
 ```txt
 Authentication > URL Configuration
 Site URL:
-https://lifto-production.up.railway.app
+https://lifting-production.up.railway.app
 
 Redirect URLs:
-https://lifto-production.up.railway.app/auth/callback
+https://lifting-production.up.railway.app/auth/callback
 http://localhost:5173/auth/callback
 http://localhost:4173/auth/callback
 ```
@@ -471,6 +471,8 @@ Com Supabase:
 Sem Supabase:
 
 - usa `databaseClient` com localStorage;
+- grava novas chaves `lifto_*`;
+- le chaves antigas `lifting_*` e `content_env_*` como fallback e migra silenciosamente para `lifto_*`;
 - migra dados legados de `content-env-store`;
 - semeia dados iniciais de `src/data/mockData.ts`.
 
@@ -666,6 +668,7 @@ Persistencia atual da gamificacao:
 - o RPC `sync_user_progression()` recalcula XP, nivel, streak, Iron Streak, conquistas e titulos com base em dados persistidos do usuario autenticado;
 - PRs podem alimentar memoria historica, conquistas e titulos de legado, mas nao geram XP nem Iron Streak;
 - cache local existe apenas via `databaseClient` para UX/fallback, nunca como fonte oficial;
+- cache novo usa `lifto_user_progression_cache` com fallback para `lifting_user_progression_cache`;
 - o frontend nao deve desbloquear conquista, titulo ou XP oficial por conta propria.
 
 ## Bodybuilding Legacy Titles
@@ -852,7 +855,7 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 41 testes passaram
+npm run test  - 43 testes passaram
 npm run build - passou
 ```
 
@@ -920,8 +923,10 @@ main
 Deploy conhecido:
 
 ```txt
-https://lifto-production.up.railway.app
+https://lifting-production.up.railway.app
 ```
+
+Observacao: LIFTO e o branding oficial, mas o deploy segue no dominio Railway provisionado `lifting-production.up.railway.app` ate existir dominio novo validado no Railway, Supabase Auth e Google OAuth.
 
 Antes de commit/push:
 

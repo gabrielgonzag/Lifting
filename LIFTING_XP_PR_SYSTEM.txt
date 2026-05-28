@@ -445,5 +445,5 @@ npm run build
 ULTIMA VALIDACAO CONHECIDA
 
 - lint passou;
-- test passou com 41 testes;
+- test passou com 43 testes;
 - build passou.

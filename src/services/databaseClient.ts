@@ -2,20 +2,37 @@ import { createClient } from "@supabase/supabase-js";
 import type { DatabaseCollection } from "../types/database";
 
 const collectionKeys: Record<DatabaseCollection, string> = {
-  auth_session: "lifting_auth_session",
-  users: "lifting_users",
-  workout_plans: "content_env_workout_plans",
-  workout_sessions: "content_env_workout_sessions",
-  personal_records: "content_env_personal_records",
-  saved_exercises: "content_env_saved_exercises",
-  coach_students: "lifting_coach_students",
-  coach_invites: "lifting_coach_invites",
-  shared_workout_plans: "lifting_shared_workout_plans",
-  coach_notes: "lifting_coach_notes",
-  coach_student_progress: "lifting_coach_student_progress",
-  coach_training_context: "lifting_coach_training_context",
-  security_audit_logs: "lifting_security_audit_logs",
-  user_progression: "lifting_user_progression_cache",
+  auth_session: "lifto_auth_session",
+  users: "lifto_users",
+  workout_plans: "lifto_workout_plans",
+  workout_sessions: "lifto_workout_sessions",
+  personal_records: "lifto_personal_records",
+  saved_exercises: "lifto_saved_exercises",
+  coach_students: "lifto_coach_students",
+  coach_invites: "lifto_coach_invites",
+  shared_workout_plans: "lifto_shared_workout_plans",
+  coach_notes: "lifto_coach_notes",
+  coach_student_progress: "lifto_coach_student_progress",
+  coach_training_context: "lifto_coach_training_context",
+  security_audit_logs: "lifto_security_audit_logs",
+  user_progression: "lifto_user_progression_cache",
+};
+
+const legacyCollectionKeys: Partial<Record<DatabaseCollection, string[]>> = {
+  auth_session: ["lifting_auth_session"],
+  users: ["lifting_users"],
+  workout_plans: ["content_env_workout_plans"],
+  workout_sessions: ["content_env_workout_sessions"],
+  personal_records: ["content_env_personal_records"],
+  saved_exercises: ["content_env_saved_exercises"],
+  coach_students: ["lifting_coach_students"],
+  coach_invites: ["lifting_coach_invites"],
+  shared_workout_plans: ["lifting_shared_workout_plans"],
+  coach_notes: ["lifting_coach_notes"],
+  coach_student_progress: ["lifting_coach_student_progress"],
+  coach_training_context: ["lifting_coach_training_context"],
+  security_audit_logs: ["lifting_security_audit_logs"],
+  user_progression: ["lifting_user_progression_cache"],
 };
 
 const readRaw = (key: string) => {
@@ -33,8 +50,19 @@ const writeRaw = (key: string, value: string) => {
 export const databaseClient = {
   read<T>(collection: DatabaseCollection, fallback: T): T {
     try {
-      const value = readRaw(collectionKeys[collection]);
-      return value ? (JSON.parse(value) as T) : fallback;
+      const currentKey = collectionKeys[collection];
+      const value = readRaw(currentKey);
+      if (value) return JSON.parse(value) as T;
+
+      for (const legacyKey of legacyCollectionKeys[collection] ?? []) {
+        const legacyValue = readRaw(legacyKey);
+        if (legacyValue) {
+          writeRaw(currentKey, legacyValue);
+          return JSON.parse(legacyValue) as T;
+        }
+      }
+
+      return fallback;
     } catch {
       return fallback;
     }

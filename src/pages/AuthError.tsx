@@ -3,7 +3,7 @@ import { Icon } from "../components/ui/Icon";
 import type { AppRoute } from "../types";
 
 export default function AuthError({ onNavigate }: { onNavigate: (route: AppRoute) => void }) {
-  const message = sessionStorage.getItem("lifting_auth_error") || "Verifique os dados informados e tente novamente.";
+  const message = sessionStorage.getItem("lifto_auth_error") || sessionStorage.getItem("lifting_auth_error") || "Verifique os dados informados e tente novamente.";
 
   return (
     <AuthShell copy={message} kicker="Erro no cadastro" title="Nao foi possivel criar sua conta">

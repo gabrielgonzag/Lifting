@@ -44,7 +44,9 @@ export default function Register({
       onNavigate("auth-success");
       return;
     }
-    sessionStorage.setItem("lifting_auth_error", result.message ?? "Verifique os dados informados e tente novamente.");
+    const errorMessage = result.message ?? "Verifique os dados informados e tente novamente.";
+    sessionStorage.setItem("lifto_auth_error", errorMessage);
+    sessionStorage.setItem("lifting_auth_error", errorMessage);
     onNavigate("auth-error");
   };
 

@@ -9,7 +9,7 @@ const readStudents = () => databaseClient.read<StudentDashboard[]>("coach_studen
 const writeStudents = (students: StudentDashboard[]) => databaseClient.write("coach_students", students);
 
 const inviteLink = (code: string) => {
-  const origin = typeof window === "undefined" ? "https://lifto-production.up.railway.app" : window.location.origin;
+  const origin = typeof window === "undefined" ? "https://lifting-production.up.railway.app" : window.location.origin;
   return `${origin}/#register?invite=${code}`;
 };
 
