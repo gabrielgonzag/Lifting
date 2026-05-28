@@ -586,6 +586,7 @@ src/features/gamification/titles.ts
 src/features/achievements/achievements.ts
 supabase/migrations/20260527190000_secure_gamification_and_audit.sql
 supabase/migrations/20260527201000_smart_xp_pr_system.sql
+supabase/migrations/20260528120000_remove_pr_xp_and_frequency_streak.sql
 ```
 
 Progressao:
@@ -609,19 +610,20 @@ XP:
 Treino concluido: +100 XP
 Treino sem series incompletas: +25 XP
 Treino acima de 45 min: +20 XP
+Treino acima de 90 min: +40 XP
 Todos os exercicios completos: +50 XP
-PR bronze/silver/gold/legendary: +10/+20/+35/+50 XP
 Volume medio/alto/extremo: +20/+50/+100 XP
 Streaks e longevidade aplicam bonus maiores em marcos raros
+PR nao gera XP, nao altera streak e nao entra nos multiplicadores
 ```
 
 Iron Streak:
 
 ```txt
-3 treinos + 1 PR na semana: x1.2
-4 treinos + 1 PR: x1.4
-5+ treinos + 1 PR: x1.6
-5+ treinos + 3 PRs: x2.0
+3 treinos na semana: x1.1
+4 treinos: x1.25
+5 treinos: x1.5
+6+ treinos: x1.8
 ```
 
 Niveis:
@@ -660,7 +662,8 @@ Persistencia atual da gamificacao:
 
 - fonte oficial deve ser Supabase, via tabelas `user_progression`, `user_achievements`, `user_titles`, `user_streaks` e `user_xp_history`;
 - `useGamificationStore` chama `gamificationService.syncProgression(userId)`;
-- o RPC `sync_user_progression()` recalcula XP, nivel, streak, Iron Streak, conquistas e titulos com base em `workout_sessions` e `personal_records` pertencentes ao usuario autenticado;
+- o RPC `sync_user_progression()` recalcula XP, nivel, streak, Iron Streak, conquistas e titulos com base em dados persistidos do usuario autenticado;
+- PRs podem alimentar memoria historica, conquistas e titulos de legado, mas nao geram XP nem Iron Streak;
 - cache local existe apenas via `databaseClient` para UX/fallback, nunca como fonte oficial;
 - o frontend nao deve desbloquear conquista, titulo ou XP oficial por conta propria.
 
@@ -848,7 +851,7 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 33 testes passaram
+npm run test  - 41 testes passaram
 npm run build - passou
 ```
 
@@ -869,6 +872,7 @@ npm run build - passou
 20260526013000_add_profile_details.sql
 20260527190000_secure_gamification_and_audit.sql
 20260527201000_smart_xp_pr_system.sql
+20260528120000_remove_pr_xp_and_frequency_streak.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.

@@ -1,7 +1,8 @@
 import { exercises } from "../data/exercises";
 import type { PersonalRecord, PersonalRecordType, WorkoutSession, WorkoutSet } from "../types";
-import type { PrRank } from "../features/gamification/xpSystem";
 import { makeId } from "./id";
+
+export type PrRank = "bronze" | "gold" | "legendary" | "silver";
 
 export const estimatedOneRepMax = (weight: number, reps: number) =>
   weight > 0 && reps > 0 ? weight * (1 + reps / 30) : 0;

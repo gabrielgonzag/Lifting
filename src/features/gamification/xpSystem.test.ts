@@ -2,26 +2,26 @@ import { describe, expect, it } from "vitest";
 import { calculateWorkoutXp, ironStreakForWeek } from "./xpSystem";
 
 describe("xp system", () => {
-  it("rewards completed training without making PR the main XP source", () => {
+  it("rewards discipline and duration without using PR for XP", () => {
     const result = calculateWorkoutXp({
       allExercisesCompleted: true,
       completedSets: 12,
-      durationMinutes: 50,
-      prRanks: ["bronze"],
+      durationMinutes: 95,
       totalSets: 12,
       totalVolume: 6_000,
     });
 
     expect(result.breakdown.some((item) => item.label === "Treino concluido" && item.xp === 100)).toBe(true);
-    expect(result.breakdown.some((item) => item.label === "PR bronze" && item.xp === 10)).toBe(true);
+    expect(result.breakdown.some((item) => item.label.includes("PR"))).toBe(false);
+    expect(result.breakdown.some((item) => item.label === "Treino acima de 90 minutos" && item.xp === 40)).toBe(true);
     expect(result.totalXp).toBeGreaterThan(100);
-    expect(result.totalXp).toBeLessThan(250);
   });
 
-  it("applies iron streak multipliers only when frequency and PR requirements are met", () => {
-    expect(ironStreakForWeek({ prs: 0, workouts: 5 })).toMatchObject({ multiplier: 1, status: "inactive" });
-    expect(ironStreakForWeek({ prs: 1, workouts: 3 })).toMatchObject({ multiplier: 1.2, status: "active" });
-    expect(ironStreakForWeek({ prs: 1, workouts: 4 })).toMatchObject({ multiplier: 1.4, status: "forte" });
-    expect(ironStreakForWeek({ prs: 3, workouts: 5 })).toMatchObject({ multiplier: 2, status: "elite" });
+  it("applies iron streak multipliers from weekly frequency only", () => {
+    expect(ironStreakForWeek(2)).toMatchObject({ multiplier: 1, status: "inactive" });
+    expect(ironStreakForWeek(3)).toMatchObject({ multiplier: 1.1, status: "active" });
+    expect(ironStreakForWeek(4)).toMatchObject({ multiplier: 1.25, status: "forte" });
+    expect(ironStreakForWeek(5)).toMatchObject({ multiplier: 1.5, status: "elite" });
+    expect(ironStreakForWeek(6)).toMatchObject({ multiplier: 1.8, status: "legendary" });
   });
 });

@@ -33,6 +33,7 @@ Arquivos principais:
 - src/utils/records.ts
 - supabase/migrations/20260527190000_secure_gamification_and_audit.sql
 - supabase/migrations/20260527201000_smart_xp_pr_system.sql
+- supabase/migrations/20260528120000_remove_pr_xp_and_frequency_streak.sql
 
 TABELAS OFICIAIS
 
@@ -54,34 +55,23 @@ Treino concluido sem series incompletas:
 Treino acima de 45 minutos:
 +20 XP
 
+Treino acima de 90 minutos:
++40 XP
+
 Treino com todos os exercicios completos:
 +50 XP
 
-XP POR PERFORMANCE
+PR E XP
 
-PR bronze:
-+10 XP
+PR nao gera XP.
 
-PR silver:
-+20 XP
+PR nao influencia:
+- XP;
+- streak;
+- multiplicadores;
+- progressao principal.
 
-PR gold:
-+35 XP
-
-PR legendary:
-+50 XP
-
-Bonus por 2 PRs no treino:
-+15 XP
-
-Bonus por 3 PRs:
-+30 XP
-
-Bonus por 5 ou mais PRs:
-+50 XP
-
-Regra importante:
-PR nao deve ser a principal fonte de XP. Treino, consistencia e longevidade valem mais.
+PR agora representa marco historico, memoria fisica, evolucao registrada, Workout Replay, Timeline, badges, conquistas e Legacy System.
 
 XP POR VOLUME
 
@@ -93,12 +83,6 @@ Volume alto:
 
 Volume extremo:
 +100 XP
-
-Treino mais pesado da vida:
-+200 XP
-
-Maior volume ja registrado:
-+250 XP
 
 XP DE CONSISTENCIA
 
@@ -145,7 +129,7 @@ XP DE LONGEVIDADE
 
 XP DE DISCIPLINA
 
-Treino apos 7 dias parado:
+Treino apos longa pausa:
 +100 XP
 
 Treino entre 5h e 7h:
@@ -154,44 +138,42 @@ Treino entre 5h e 7h:
 Treino apos 22h:
 +25 XP
 
-Treino em dia consecutivo dificil:
-+50 XP
-
 Semana perfeita:
 +500 XP
 
 IRON STREAK
 
 Iron Streak nao recompensa apenas presenca.
-Ele exige frequencia e performance.
+Ele recompensa frequencia semanal, constancia, manutencao de ritmo e disciplina.
+Ele nao depende de PR.
 
 Requisitos:
 
-3 treinos + 1 PR na semana:
+3 treinos na semana:
 Iron Streak ativo
 
-4 treinos + 1 PR:
+4 treinos:
 Iron Streak forte
 
-5 ou mais treinos + 1 PR:
+5 treinos:
 Iron Streak elite
 
-5 ou mais treinos + 3 PRs:
-Iron Streak elite maximo
+6 ou mais treinos:
+Iron Streak legendary
 
 Multiplicadores:
 
-3 treinos + 1 PR:
-XP semanal x1.2
+3 treinos:
+XP semanal x1.1
 
-4 treinos + 1 PR:
-XP semanal x1.4
+4 treinos:
+XP semanal x1.25
 
-5 ou mais treinos + 1 PR:
-XP semanal x1.6
+5 treinos:
+XP semanal x1.5
 
-5 ou mais treinos + 3 PRs:
-XP semanal x2.0
+6 ou mais treinos:
+XP semanal x1.8
 
 NIVEIS
 
@@ -240,6 +222,10 @@ SISTEMA DE PR
 
 PR significa Personal Record.
 O PR oficial representa evolucao real, performance historica e superacao.
+
+PR nao gera XP.
+PR nao altera Iron Streak.
+PR nao deve virar atalho para subir de nivel.
 
 Tipos de PR:
 
@@ -382,7 +368,7 @@ Exemplos futuros:
 
 - treino mais pesado da vida;
 - maior volume ja registrado;
-- maior streak com PR;
+- maior consistencia registrada;
 - melhor semana da vida;
 - maior progressao ja registrada.
 
@@ -393,6 +379,15 @@ Esses eventos devem integrar futuramente:
 - Ghost Progress;
 - Workout DNA;
 - Legacy System.
+
+CONSISTENCY PR
+
+Os PRs mais importantes para o legado de disciplina sao PRs de consistencia, como:
+
+- maior streak;
+- maior sequencia semanal;
+- maior sequencia mensal;
+- maior consistencia da vida.
 
 SEGURANCA
 
@@ -438,10 +433,11 @@ Testes atuais relacionados:
 Validacoes importantes:
 
 - PR manual nao vira PR oficial;
+- PR nao gera XP;
 - PR falso nao e validado;
 - carga absurda nao e validada;
 - progresso insignificante nao vira PR;
-- Iron Streak exige treinos e PRs;
+- Iron Streak exige frequencia semanal sem depender de PR;
 - XP usa regras centralizadas;
 - progressao oficial vem do Supabase/RPC.
 
