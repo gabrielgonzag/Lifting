@@ -238,53 +238,18 @@ const slug = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
-const exerciseIllustrations: Record<string, string> = {
-  "barbell bench press": "https://static.exercisedb.dev/media/EIeI8Vf.gif",
-  "bodyweight squat": "https://static.exercisedb.dev/media/zNKHsTl.gif",
-  "cable lat pulldown": "https://static.exercisedb.dev/media/01600.gif",
-  "cable pushdown": "https://static.exercisedb.dev/media/02000.gif",
-  "dumbbell lateral raise": "https://static.exercisedb.dev/media/03340.gif",
-  "dumbbell row": "https://static.exercisedb.dev/media/02920.gif",
-  "dumbbell shoulder press": "https://static.exercisedb.dev/media/04050.gif",
-  "ez barbell curl": "https://static.exercisedb.dev/media/04470.gif",
-  "leg press": "https://static.exercisedb.dev/media/07390.gif",
-  "pull up": "https://static.exercisedb.dev/media/14290.gif",
-  "push up": "https://static.exercisedb.dev/media/06620.gif",
-  "romanian deadlift": "https://static.exercisedb.dev/media/00850.gif",
-};
-
-const illustrationAliases: Record<string, string> = {
-  "Agachamento livre com barra": "bodyweight squat",
-  "Barra fixa pronada": "pull up",
-  "Barra fixa supinada": "pull up",
-  "Deadlift / levantamento terra": "romanian deadlift",
-  "Desenvolvimento com halteres": "dumbbell shoulder press",
-  "Elevacao lateral com halteres": "dumbbell lateral raise",
-  "Flexao tradicional": "push up",
-  "Leg press 45": "leg press",
-  "Pulldown frontal": "cable lat pulldown",
-  "Remada unilateral com halter": "dumbbell row",
-  "Rosca direta barra W": "ez barbell curl",
-  "Supino reto com barra": "barbell bench press",
-  "Triceps pulley barra reta": "cable pushdown",
-};
-
 export const muscleGroups = Object.keys(exerciseSeeds);
 
 export const exercises: Exercise[] = Object.entries(exerciseSeeds).flatMap(
   ([muscleGroup, group]) =>
-    group.items.map(([name, equipment], index) => {
-      const illustrationKey = illustrationAliases[name];
-      return {
-        id: `${slug(muscleGroup)}-${index + 1}-${slug(name)}`,
-        name,
-        muscleGroup,
-        category: group.category,
-        equipment,
-        gifUrl: illustrationKey ? exerciseIllustrations[illustrationKey] : undefined,
-        variation: equipment,
-      };
-    }),
+    group.items.map(([name, equipment], index) => ({
+      id: `${slug(muscleGroup)}-${index + 1}-${slug(name)}`,
+      name,
+      muscleGroup,
+      category: group.category,
+      equipment,
+      variation: equipment,
+    })),
 );
 
 export const equipmentOptions = [...new Set(exercises.map((exercise) => exercise.equipment))];

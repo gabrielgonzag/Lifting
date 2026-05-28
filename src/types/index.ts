@@ -25,7 +25,6 @@ export type Exercise = {
   muscleGroup: string;
   category: Category;
   equipment: string;
-  gifUrl?: string;
   variation: string;
   isFavorite?: boolean;
   notes?: string;
