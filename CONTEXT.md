@@ -205,10 +205,10 @@ Configuracao esperada no Supabase:
 ```txt
 Authentication > URL Configuration
 Site URL:
-https://lifting-production.up.railway.app
+https://lifting.up.railway.app
 
 Redirect URLs:
-https://lifting-production.up.railway.app/auth/callback
+https://lifting.up.railway.app/auth/callback
 http://localhost:5173/auth/callback
 http://localhost:4173/auth/callback
 ```
@@ -923,10 +923,10 @@ main
 Deploy conhecido:
 
 ```txt
-https://lifting-production.up.railway.app
+https://lifting.up.railway.app
 ```
 
-Observacao: LIFTO e o branding oficial, mas o deploy segue no dominio Railway provisionado `lifting-production.up.railway.app` ate existir dominio novo validado no Railway, Supabase Auth e Google OAuth.
+Observacao: LIFTO e o branding oficial, mas o deploy segue no dominio Railway provisionado `lifting.up.railway.app`. Qualquer dominio novo precisa ser validado no Railway, Supabase Auth e Google OAuth antes de entrar no app.
 
 Antes de commit/push:
 

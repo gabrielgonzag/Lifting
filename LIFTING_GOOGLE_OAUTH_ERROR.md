@@ -44,13 +44,13 @@ Configurar:
 
 ```txt
 Site URL:
-https://lifting-production.up.railway.app
+https://lifting.up.railway.app
 ```
 
 Adicionar em Redirect URLs:
 
 ```txt
-https://lifting-production.up.railway.app/auth/callback
+https://lifting.up.railway.app/auth/callback
 ```
 
 Se for testar localmente, adicionar tambem:
@@ -86,7 +86,7 @@ Importante: no Google Cloud normalmente entra o callback do Supabase, nao o call
 4. Supabase retorna para:
 
 ```txt
-https://lifting-production.up.railway.app/auth/callback
+https://lifting.up.railway.app/auth/callback
 ```
 
 5. A aplicacao troca o codigo por sessao.

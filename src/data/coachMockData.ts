@@ -191,7 +191,7 @@ export const coachMockInvites = (coachId: string): CoachInvite[] => [
     coachId,
     studentEmail: "ana.futura@email.com",
     inviteCode: "LFT-ANA24",
-    inviteLink: "https://lifting-production.up.railway.app/#register?invite=LFT-ANA24",
+    inviteLink: "https://lifting.up.railway.app/#register?invite=LFT-ANA24",
     status: "pending",
     createdAt: daysAgo(1),
     expiresAt: daysAgo(-13),

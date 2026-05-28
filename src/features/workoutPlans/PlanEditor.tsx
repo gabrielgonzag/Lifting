@@ -168,6 +168,7 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
                   onDrop={() => moveExercise(index)}
                 >
                   <GripVertical className="text-zinc-500" size={18} />
+                  <ExerciseThumb exercise={exercise} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{exercise.name}</p>
                     <p className="text-xs text-zinc-400">{exercise.muscleGroup}</p>
@@ -244,6 +245,7 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
                       const added = selectedIds.includes(exercise.id);
                       return (
                         <div className="flex items-center gap-2 rounded-md bg-black/15 p-2" key={exercise.id}>
+                          <ExerciseThumb exercise={exercise} />
                           <div className="min-w-0 flex-1">
                             <p className="font-medium">{exercise.name}</p>
                             <p className="text-xs text-zinc-500">{exercise.equipment}</p>
@@ -269,6 +271,23 @@ export function PlanEditor({ plan, onClose }: { plan?: WorkoutPlan; onClose: () 
         </Card>
       </motion.div>
       <Toast message={notice} />
+    </div>
+  );
+}
+
+function ExerciseThumb({ exercise }: { exercise: Exercise }) {
+  return (
+    <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-white/10 bg-white/[.04]">
+      {exercise.gifUrl ? (
+        <img
+          alt={`Demonstracao de ${exercise.name}`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          src={exercise.gifUrl}
+        />
+      ) : (
+        <span className="text-xs font-black uppercase text-zinc-500">{exercise.muscleGroup.slice(0, 2)}</span>
+      )}
     </div>
   );
 }
