@@ -1,0 +1,458 @@
+LIFTING - SISTEMA DE XP E PR
+
+Este documento descreve o sistema atual de XP, Iron Streak e Personal Records do LIFTING.
+
+OBJETIVO
+
+O XP do LIFTING representa disciplina, consistencia, intensidade, longevidade e evolucao real.
+
+O sistema nao deve recompensar spam, login diario, PR falso ou manipulacao de carga.
+O cliente exibe progresso, mas nao deve ser a fonte oficial de XP, titulos, conquistas ou PRs.
+
+FONTE OFICIAL
+
+Frontend:
+- exibe XP, nivel, titulos e conquistas;
+- mantem cache local apenas para UX;
+- nao decide progressao oficial.
+
+Supabase/backend:
+- recalcula XP oficial;
+- valida streak;
+- desbloqueia conquistas;
+- desbloqueia titulos;
+- registra auditoria;
+- usa dados persistidos em workout_sessions e personal_records.
+
+Arquivos principais:
+
+- src/features/gamification/xpSystem.ts
+- src/features/gamification/useGamificationStore.ts
+- src/services/gamificationService.ts
+- src/repositories/gamificationRepository.ts
+- src/utils/records.ts
+- supabase/migrations/20260527190000_secure_gamification_and_audit.sql
+- supabase/migrations/20260527201000_smart_xp_pr_system.sql
+
+TABELAS OFICIAIS
+
+- user_progression
+- user_achievements
+- user_titles
+- user_xp_history
+- user_streaks
+- security_audit_logs
+
+XP BASE
+
+Treino concluido:
++100 XP
+
+Treino concluido sem series incompletas:
++25 XP
+
+Treino acima de 45 minutos:
++20 XP
+
+Treino com todos os exercicios completos:
++50 XP
+
+XP POR PERFORMANCE
+
+PR bronze:
++10 XP
+
+PR silver:
++20 XP
+
+PR gold:
++35 XP
+
+PR legendary:
++50 XP
+
+Bonus por 2 PRs no treino:
++15 XP
+
+Bonus por 3 PRs:
++30 XP
+
+Bonus por 5 ou mais PRs:
++50 XP
+
+Regra importante:
+PR nao deve ser a principal fonte de XP. Treino, consistencia e longevidade valem mais.
+
+XP POR VOLUME
+
+Volume medio:
++20 XP
+
+Volume alto:
++50 XP
+
+Volume extremo:
++100 XP
+
+Treino mais pesado da vida:
++200 XP
+
+Maior volume ja registrado:
++250 XP
+
+XP DE CONSISTENCIA
+
+3 dias seguidos:
++50 XP
+
+7 dias:
++150 XP
+
+14 dias:
++350 XP
+
+30 dias:
++1000 XP
+
+60 dias:
++2500 XP
+
+100 dias:
++5000 XP
+
+365 dias:
++15000 XP
+
+XP DE LONGEVIDADE
+
+1 mes ativo:
++250 XP
+
+3 meses:
++750 XP
+
+6 meses:
++2000 XP
+
+1 ano:
++5000 XP
+
+2 anos:
++12000 XP
+
+3 anos:
++25000 XP
+
+XP DE DISCIPLINA
+
+Treino apos 7 dias parado:
++100 XP
+
+Treino entre 5h e 7h:
++25 XP
+
+Treino apos 22h:
++25 XP
+
+Treino em dia consecutivo dificil:
++50 XP
+
+Semana perfeita:
++500 XP
+
+IRON STREAK
+
+Iron Streak nao recompensa apenas presenca.
+Ele exige frequencia e performance.
+
+Requisitos:
+
+3 treinos + 1 PR na semana:
+Iron Streak ativo
+
+4 treinos + 1 PR:
+Iron Streak forte
+
+5 ou mais treinos + 1 PR:
+Iron Streak elite
+
+5 ou mais treinos + 3 PRs:
+Iron Streak elite maximo
+
+Multiplicadores:
+
+3 treinos + 1 PR:
+XP semanal x1.2
+
+4 treinos + 1 PR:
+XP semanal x1.4
+
+5 ou mais treinos + 1 PR:
+XP semanal x1.6
+
+5 ou mais treinos + 3 PRs:
+XP semanal x2.0
+
+NIVEIS
+
+XP por nivel:
+500 XP
+
+Formula:
+level = floor(totalXp / 500) + 1
+xp = totalXp % 500
+
+Titulos basicos de nivel:
+
+1-5:
+Iniciante
+
+6-15:
+Consistente
+
+16-30:
+Forte
+
+31-50:
+Elite
+
+51+:
+Lenda
+
+BODYBUILDING LEGACY TITLES
+
+Os titulos de legado sao exibidos no frontend, mas o desbloqueio oficial deve vir do Supabase.
+
+Fonte:
+- user_titles
+- user_progression.current_title_id
+
+Os titulos usam requisitos de:
+- level;
+- treinos;
+- PRs;
+- streak;
+- volume.
+
+MR. OLYMPIA e o titulo maximo e deve ser extremamente raro.
+
+SISTEMA DE PR
+
+PR significa Personal Record.
+O PR oficial representa evolucao real, performance historica e superacao.
+
+Tipos de PR:
+
+1. Weight PR
+Recorde de carga.
+
+2. Rep PR
+Recorde de repeticoes.
+
+3. Volume PR
+Recorde de volume.
+
+4. Estimated 1RM PR
+Recorde tecnico baseado em estimativa de 1 repeticao maxima.
+
+Formula de 1RM:
+estimated1RM = weight * (1 + reps / 30)
+
+PR OFICIAL NAO E MANUAL
+
+O usuario pode marcar uma serie como PR na interface para destaque visual, momento favorito ou feedback pessoal.
+
+Mas:
+- isPr nao cria recorde oficial sozinho;
+- PR oficial e automatico;
+- PR oficial precisa bater criterios objetivos.
+
+REGRAS ANTI-SPAM
+
+Nao validar PR se:
+
+- serie nao estiver completa;
+- peso for menor ou igual a zero;
+- repeticoes forem menores ou iguais a zero;
+- repeticoes forem absurdas;
+- carga for absurda;
+- volume da serie for extremamente fora do padrao;
+- progresso for insignificante;
+- treino estiver incompleto;
+- dados estiverem inconsistentes.
+
+Limites atuais no frontend:
+
+- peso maximo aceito para PR automatico: 500kg;
+- reps maximas aceitas: 100;
+- volume maximo por serie: 50000.
+
+MARGENS MINIMAS
+
+Weight PR em exercicios compostos:
+precisa evoluir pelo menos +2kg.
+
+Weight PR em exercicios isolados:
+precisa evoluir pelo menos +1kg.
+
+Exercicios compostos sao detectados por nomes como:
+- supino;
+- agachamento;
+- levantamento;
+- terra;
+- remada.
+
+REP PR
+
+Rep PR so e valido se:
+
+- as repeticoes aumentarem;
+- a carga for igual ou muito proxima da anterior;
+- carga atual for pelo menos 95% da carga do recorde anterior.
+
+Exemplo valido:
+80kg x 8
+para
+80kg x 10
+
+Exemplo valido:
+80kg x 8
+para
+78kg x 10
+
+Exemplo suspeito:
+80kg x 8
+para
+40kg x 30
+
+VOLUME PR
+
+Volume PR avalia:
+weight * reps
+
+Para validar novo volume de serie:
+- precisa superar o recorde anterior;
+- precisa ter pelo menos 3% de melhoria.
+
+ESTIMATED 1RM PR
+
+Estimated 1RM PR usa:
+weight * (1 + reps / 30)
+
+Para validar:
+- precisa superar o recorde anterior;
+- precisa ter pelo menos 1% de melhoria.
+
+CLASSIFICACAO DO PR
+
+Bronze:
+pequeno avanco.
+
+Silver:
+boa evolucao.
+
+Gold:
+grande evolucao.
+
+Legendary:
+momento historico.
+
+Regra atual:
+
+Sem recorde anterior:
+bronze.
+
+Melhoria menor que 4%:
+bronze.
+
+Melhoria a partir de 4%:
+silver.
+
+Melhoria a partir de 10%:
+gold.
+
+Melhoria a partir de 20%:
+legendary.
+
+PR HISTORICO
+
+PRs historicos devem ser derivados de dados persistidos.
+
+Exemplos futuros:
+
+- treino mais pesado da vida;
+- maior volume ja registrado;
+- maior streak com PR;
+- melhor semana da vida;
+- maior progressao ja registrada.
+
+Esses eventos devem integrar futuramente:
+
+- Timeline de Evolucao Fisica;
+- Workout Replay;
+- Ghost Progress;
+- Workout DNA;
+- Legacy System.
+
+SEGURANCA
+
+O frontend nao decide:
+
+- XP oficial;
+- PR oficial;
+- titulos oficiais;
+- conquistas oficiais;
+- streak oficial;
+- role;
+- plan;
+- status.
+
+Tudo que afeta progressao, acesso, permissao ou legado deve ser validado por service/backend/Supabase.
+
+AUDITORIA
+
+Eventos sensiveis devem gerar log em security_audit_logs.
+
+Exemplos:
+
+- gamification_update;
+- title_unlocked;
+- achievement_unlocked;
+- access_denied;
+- unauthorized_action;
+- role_change_attempt;
+- plan_change_attempt;
+- suspicious_activity.
+
+TESTES
+
+Testes atuais relacionados:
+
+- src/features/gamification/xpSystem.test.ts
+- src/features/gamification/useGamificationStore.test.ts
+- src/features/gamification/titles.test.ts
+- src/utils/records.test.ts
+- src/services/gamificationService.test.ts
+- src/services/auditService.test.ts
+
+Validacoes importantes:
+
+- PR manual nao vira PR oficial;
+- PR falso nao e validado;
+- carga absurda nao e validada;
+- progresso insignificante nao vira PR;
+- Iron Streak exige treinos e PRs;
+- XP usa regras centralizadas;
+- progressao oficial vem do Supabase/RPC.
+
+COMANDOS DE VALIDACAO
+
+npm run lint
+npm run test
+npm run build
+
+ULTIMA VALIDACAO CONHECIDA
+
+- lint passou;
+- test passou com 41 testes;
+- build passou.

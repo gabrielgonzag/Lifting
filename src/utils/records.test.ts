@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PersonalRecord, WorkoutSession } from "../types";
-import { bestRecord, estimatedOneRepMax, recordsForSession } from "./records";
+import { bestRecord, classifyPersonalRecord, estimatedOneRepMax, recordsForSession } from "./records";
 
 const session: WorkoutSession = {
   id: "session-1",
@@ -62,7 +62,7 @@ describe("personal record calculations", () => {
     expect(bestRecord(records, "peito-1-supino-reto-com-barra", "estimated_1rm")?.value).toBe(120);
   });
 
-  it("keeps a manually marked PR even when it does not beat a previous best", () => {
+  it("does not create official records from manual PR marks alone", () => {
     const previous: PersonalRecord[] = [
       {
         id: "pr-1",
@@ -90,6 +90,52 @@ describe("personal record calculations", () => {
 
     const records = recordsForSession(manualSession, previous);
 
-    expect(records.some((record) => record.type === "absolute_weight" && record.value === 100)).toBe(true);
+    expect(records.some((record) => record.type === "absolute_weight" && record.value === 100)).toBe(false);
+  });
+
+  it("rejects insignificant and absurd PR attempts", () => {
+    const previous: PersonalRecord[] = [
+      {
+        id: "pr-1",
+        userId: "user-1",
+        exerciseId: "peito-1-supino-reto-com-barra",
+        exerciseName: "Supino reto com barra",
+        type: "absolute_weight",
+        value: 100,
+        weight: 100,
+        reps: 6,
+        date: "2026-05-01T00:00:00.000Z",
+        createdAt: "2026-05-01T00:00:00.000Z",
+        updatedAt: "2026-05-01T00:00:00.000Z",
+      },
+    ];
+    const tinyJump: WorkoutSession = {
+      ...session,
+      exercises: [
+        {
+          ...session.exercises[0],
+          sets: [{ id: "tiny", weight: 101, reps: 6, completed: true }],
+        },
+      ],
+    };
+    const absurd: WorkoutSession = {
+      ...session,
+      exercises: [
+        {
+          ...session.exercises[0],
+          sets: [{ id: "absurd", weight: 900, reps: 6, completed: true }],
+        },
+      ],
+    };
+
+    expect(recordsForSession(tinyJump, previous).some((record) => record.type === "absolute_weight")).toBe(false);
+    expect(recordsForSession(absurd, []).some((record) => record.type === "absolute_weight")).toBe(false);
+  });
+
+  it("classifies PR relevance from improvement size", () => {
+    expect(classifyPersonalRecord(101, 100)).toBe("bronze");
+    expect(classifyPersonalRecord(105, 100)).toBe("silver");
+    expect(classifyPersonalRecord(112, 100)).toBe("gold");
+    expect(classifyPersonalRecord(125, 100)).toBe("legendary");
   });
 });

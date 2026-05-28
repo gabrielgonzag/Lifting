@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build .",
-    "build:analyze": "tsc -b && vite build --mode analyze .",
+    "build": "tsc -b && vite build",
+    "build:analyze": "tsc -b && vite build --mode analyze",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

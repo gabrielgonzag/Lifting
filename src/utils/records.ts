@@ -1,5 +1,6 @@
 import { exercises } from "../data/exercises";
 import type { PersonalRecord, PersonalRecordType, WorkoutSession, WorkoutSet } from "../types";
+import type { PrRank } from "../features/gamification/xpSystem";
 import { makeId } from "./id";
 
 export const estimatedOneRepMax = (weight: number, reps: number) =>
@@ -15,6 +16,18 @@ const setMetricValue = (type: PersonalRecordType, set: WorkoutSet) => {
 const isCompletedSet = (set: WorkoutSet) =>
   set.completed === true && set.weight > 0 && set.reps > 0;
 
+const isCompoundExercise = (exerciseId: string) => {
+  const exercise = exercises.find((item) => item.id === exerciseId);
+  if (!exercise) return true;
+  const name = exercise.name.toLowerCase();
+  return ["agachamento", "levantamento", "remada", "supino", "terra"].some((term) => name.includes(term));
+};
+
+const minWeightProgression = (exerciseId: string) => (isCompoundExercise(exerciseId) ? 2 : 1);
+
+const saneSet = (set: WorkoutSet) =>
+  isCompletedSet(set) && Number.isFinite(set.weight) && Number.isFinite(set.reps) && set.weight <= 500 && set.reps <= 100 && set.weight * set.reps <= 50_000;
+
 export const recordLabel = (type: PersonalRecordType) => {
   if (type === "absolute_weight") return "Carga";
   if (type === "estimated_1rm") return "1RM";
@@ -26,12 +39,6 @@ export const recordValueLabel = (record: Pick<PersonalRecord, "type" | "value">)
   const value = Math.round(record.value * 10) / 10;
   if (record.type === "max_reps") return `${value} reps`;
   return `${value} kg`;
-};
-
-const manualPrType = (set: WorkoutSet): PersonalRecordType => {
-  if (set.prType === "reps") return "max_reps";
-  if (set.prType === "volume") return "set_volume";
-  return "absolute_weight";
 };
 
 const buildRecord = (
@@ -54,6 +61,31 @@ const buildRecord = (
   updatedAt: session.updatedAt ?? session.date,
 });
 
+export const classifyPersonalRecord = (value: number, previousValue = 0): PrRank => {
+  if (previousValue <= 0) return "bronze";
+  const improvement = (value - previousValue) / previousValue;
+  if (improvement >= 0.2) return "legendary";
+  if (improvement >= 0.1) return "gold";
+  if (improvement >= 0.04) return "silver";
+  return "bronze";
+};
+
+const isMeaningfulRecord = (
+  type: PersonalRecordType,
+  set: WorkoutSet,
+  exerciseId: string,
+  previous?: PersonalRecord,
+) => {
+  if (!saneSet(set)) return false;
+  if (!previous) return true;
+  const value = setMetricValue(type, set);
+  if (value <= previous.value) return false;
+  if (type === "absolute_weight") return value - previous.value >= minWeightProgression(exerciseId);
+  if (type === "max_reps") return set.reps > previous.reps && set.weight >= previous.weight * 0.95;
+  if (type === "set_volume") return value >= previous.value * 1.03;
+  return value >= previous.value * 1.01;
+};
+
 export const buildRecordsFromSessions = (sessions: WorkoutSession[]) => {
   const records: PersonalRecord[] = [];
   [...sessions]
@@ -63,26 +95,13 @@ export const buildRecordsFromSessions = (sessions: WorkoutSession[]) => {
         const exercise = exercises.find((item) => item.id === entry.exerciseId);
         if (!exercise) return;
         entry.sets
-          .filter(isCompletedSet)
+          .filter(saneSet)
           .forEach((set) => {
             (["absolute_weight", "estimated_1rm", "set_volume", "max_reps"] as PersonalRecordType[]).forEach((type) => {
-              const value = setMetricValue(type, set);
               const previous = bestRecord(records, entry.exerciseId, type);
-              if (value <= (previous?.value ?? 0)) return;
+              if (!isMeaningfulRecord(type, set, entry.exerciseId, previous)) return;
               records.push(buildRecord(session, entry.exerciseId, exercise.name, set, type));
             });
-            if (set.isPr) {
-              const type = manualPrType(set);
-              const alreadyTracked = records.some(
-                (record) =>
-                  record.exerciseId === entry.exerciseId &&
-                  record.type === type &&
-                  record.weight === set.weight &&
-                  record.reps === set.reps &&
-                  record.date === session.date,
-              );
-              if (!alreadyTracked) records.push(buildRecord(session, entry.exerciseId, exercise.name, set, type));
-            }
           });
       });
     });
@@ -98,26 +117,13 @@ export const recordsForSession = (
     const exercise = exercises.find((item) => item.id === entry.exerciseId);
     if (!exercise) return;
     entry.sets
-      .filter(isCompletedSet)
+      .filter(saneSet)
       .forEach((set) => {
         (["absolute_weight", "estimated_1rm", "set_volume", "max_reps"] as PersonalRecordType[]).forEach((type) => {
           const prior = bestRecord([...previousRecords, ...nextRecords], entry.exerciseId, type);
-          const value = setMetricValue(type, set);
-          if (value <= (prior?.value ?? 0)) return;
+          if (!isMeaningfulRecord(type, set, entry.exerciseId, prior)) return;
           nextRecords.push(buildRecord(session, entry.exerciseId, exercise.name, set, type));
         });
-        if (set.isPr) {
-          const type = manualPrType(set);
-          const alreadyTracked = nextRecords.some(
-            (record) =>
-              record.exerciseId === entry.exerciseId &&
-              record.type === type &&
-              record.weight === set.weight &&
-              record.reps === set.reps &&
-              record.date === session.date,
-          );
-          if (!alreadyTracked) nextRecords.push(buildRecord(session, entry.exerciseId, exercise.name, set, type));
-        }
       });
   });
   return nextRecords;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { gamificationService } from "../../services/gamificationService";
+import { XP_PER_LEVEL } from "./xpSystem";
 
 export type UserProgression = {
   currentTitleId: string;
@@ -30,7 +31,7 @@ type GamificationState = UserProgression & {
   syncProgression: (userId?: string) => Promise<UserProgression>;
 };
 
-export const XP_PER_LEVEL = 500;
+export { XP_PER_LEVEL };
 
 const emptyProgression: UserProgression = {
   achievements: [],

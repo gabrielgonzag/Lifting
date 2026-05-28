@@ -558,7 +558,11 @@ estimated1RM = weight * (1 + reps / 30)
 Regras:
 
 - series com peso e reps validos geram PR automatico quando batem anterior;
-- series marcadas manualmente com `isPr` geram historico de PR mesmo se nao superarem o melhor anterior;
+- series marcadas manualmente com `isPr` servem apenas como destaque visual/momento favorito e nao geram PR oficial sozinhas;
+- PR oficial exige serie completa, carga/reps validas, sanidade anti-spam e margem minima de progresso;
+- carga absurda, reps invalidas, serie incompleta ou progresso insignificante nao viram PR;
+- exercicios compostos exigem pelo menos +2kg em Weight PR, isolados pelo menos +1kg;
+- PRs sao classificados como bronze, silver, gold ou legendary por `classifyPersonalRecord()`;
 - `recordValueLabel()` evita mostrar `kg` em PR de repeticoes.
 
 Migration:
@@ -577,9 +581,11 @@ Arquivos:
 src/features/gamification/useGamificationStore.ts
 src/services/gamificationService.ts
 src/repositories/gamificationRepository.ts
+src/features/gamification/xpSystem.ts
 src/features/gamification/titles.ts
 src/features/achievements/achievements.ts
 supabase/migrations/20260527190000_secure_gamification_and_audit.sql
+supabase/migrations/20260527201000_smart_xp_pr_system.sql
 ```
 
 Progressao:
@@ -601,9 +607,21 @@ XP:
 
 ```txt
 Treino concluido: +100 XP
-PR: +50 XP
-7 dias seguidos: +300 XP
-30 dias seguidos: +1000 XP
+Treino sem series incompletas: +25 XP
+Treino acima de 45 min: +20 XP
+Todos os exercicios completos: +50 XP
+PR bronze/silver/gold/legendary: +10/+20/+35/+50 XP
+Volume medio/alto/extremo: +20/+50/+100 XP
+Streaks e longevidade aplicam bonus maiores em marcos raros
+```
+
+Iron Streak:
+
+```txt
+3 treinos + 1 PR na semana: x1.2
+4 treinos + 1 PR: x1.4
+5+ treinos + 1 PR: x1.6
+5+ treinos + 3 PRs: x2.0
 ```
 
 Niveis:
@@ -642,7 +660,7 @@ Persistencia atual da gamificacao:
 
 - fonte oficial deve ser Supabase, via tabelas `user_progression`, `user_achievements`, `user_titles`, `user_streaks` e `user_xp_history`;
 - `useGamificationStore` chama `gamificationService.syncProgression(userId)`;
-- o RPC `sync_user_progression()` recalcula XP, nivel, streak, conquistas e titulos com base em `workout_sessions` e `personal_records` pertencentes ao usuario autenticado;
+- o RPC `sync_user_progression()` recalcula XP, nivel, streak, Iron Streak, conquistas e titulos com base em `workout_sessions` e `personal_records` pertencentes ao usuario autenticado;
 - cache local existe apenas via `databaseClient` para UX/fallback, nunca como fonte oficial;
 - o frontend nao deve desbloquear conquista, titulo ou XP oficial por conta propria.
 
@@ -850,6 +868,7 @@ npm run build - passou
 20260525153000_add_manual_pr_sets.sql
 20260526013000_add_profile_details.sql
 20260527190000_secure_gamification_and_audit.sql
+20260527201000_smart_xp_pr_system.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
