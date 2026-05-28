@@ -84,7 +84,7 @@ export default function Profile() {
           <div>
             <p className="label">Perfil</p>
             <h1 className="mt-1 text-3xl font-bold tracking-[-0.035em]">Sua evolucao</h1>
-            <p className="mt-2 text-sm text-[var(--fg-3)]">Identidade, progresso e conquistas no LIFTING.</p>
+            <p className="mt-2 text-sm text-[var(--fg-3)]">Identidade, progresso e conquistas no LIFTO.</p>
           </div>
           <button className="btn btn-primary" onClick={() => setEditing((value) => !value)} type="button">
             <Icon name={editing ? "x" : "edit"} size={16} />

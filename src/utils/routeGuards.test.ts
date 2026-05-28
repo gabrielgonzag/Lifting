@@ -5,7 +5,7 @@ import { guardRoute, parseHashRoute, routeForUser } from "./routeGuards";
 const makeUser = (role: User["role"]): User => ({
   id: `${role}-user`,
   name: role,
-  email: `${role}@lifting.test`,
+  email: `${role}@lifto.test`,
   emailVerified: true,
   role,
   plan: role === "professional" ? "coach" : role === "admin" ? "elite" : "entry",
@@ -46,3 +46,4 @@ describe("route guards", () => {
     expect(guardRoute({ isAuthenticated: true, route: "verify-email", user: pending })).toBe("verify-email");
   });
 });
+

@@ -1,4 +1,4 @@
-/* LIFTING — Editor (ficha edit) + Treino screens */
+/* LIFTO — Editor (ficha edit) + Treino screens */
 
 // ───────── EDITOR DE FICHA ─────────
 function EditorScreen({ ficha, onSave, onCancel, isMobile }) {

@@ -92,8 +92,8 @@ export function MobileProfileMenu({
                   {user?.avatarUrl ? <img alt="" className="h-full w-full object-cover" src={user.avatarUrl} /> : initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
-                  <p className="truncate text-xs text-[var(--fg-3)]">{user?.email ?? "usuario@lifting.app"}</p>
+                  <p className="truncate text-sm font-black text-[var(--fg)]">{user?.name ?? "Lifto"}</p>
+                  <p className="truncate text-xs text-[var(--fg-3)]">{user?.email ?? "usuario@lifto.app"}</p>
                   <span className="mt-2 inline-flex rounded-full border border-[var(--lime)]/25 bg-[var(--lime)]/10 px-2 py-0.5 text-[10px] font-black uppercase text-[var(--lime)]">
                     {user?.plan ?? "entry"}
                   </span>

@@ -1,4 +1,4 @@
-/* LIFTING — shell: sidebar, bottom nav, viewport toggle, header */
+/* LIFTO — shell: sidebar, bottom nav, viewport toggle, header */
 
 const NAV = [
   { id: 'home',      icon: 'home',     label: 'Home' },
@@ -23,7 +23,7 @@ function Wordmark({ size = 22, color }) {
           <path d="M5 7v10M9 4v16M15 4v16M19 7v10M3 12h2M19 12h2M9 12h6" stroke="#0a0a0a" strokeWidth="2.4" strokeLinecap="round" />
         </svg>
       </div>
-      <span>LIFTING</span>
+      <span>LIFTO</span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-/* LIFTING — Progresso screen + custom SVG charts */
+/* LIFTO — Progresso screen + custom SVG charts */
 
 // ───────── Line chart (PR over time) ─────────
 function LineChart({ data, height = 200, color = '#CDFF00', label }) {

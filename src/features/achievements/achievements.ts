@@ -15,7 +15,7 @@ export const achievements: Achievement[] = [
   {
     id: "first-workout",
     title: "Primeiro Ritual",
-    description: "Finalize seu primeiro treino no LIFTING.",
+    description: "Finalize seu primeiro treino no LIFTO.",
     icon: "flame",
     rarity: "common",
     xpReward: 100,
@@ -63,7 +63,7 @@ export const achievements: Achievement[] = [
   {
     id: "hundred-workouts",
     title: "Cem Rituais",
-    description: "Finalize 100 treinos no LIFTING.",
+    description: "Finalize 100 treinos no LIFTO.",
     icon: "flame",
     rarity: "legendary",
     xpReward: 1000,

@@ -8,7 +8,7 @@ import { validatePassword } from "./passwordValidator";
 const user = (plan: User["plan"], role: User["role"] = "casual"): User => ({
   id: `${role}-${plan}`,
   name: "Tester",
-  email: `${role}.${plan}@lifting.test`,
+  email: `${role}.${plan}@lifto.test`,
   emailVerified: true,
   role,
   plan,
@@ -21,12 +21,12 @@ describe("auth business validators", () => {
   it("validates strong passwords with required and recommended checks", () => {
     expect(validatePassword("lifting123").isValid).toBe(false);
     expect(validatePassword("12345678").isValid).toBe(false);
-    expect(validatePassword("Lifting123")).toMatchObject({ isValid: true, strength: "media" });
+    expect(validatePassword("Lifto123")).toMatchObject({ isValid: true, strength: "media" });
     expect(validatePassword("Lift@2026")).toMatchObject({ isValid: true, strength: "forte" });
   });
 
   it("normalizes and rejects invalid email formats and domains", () => {
-    expect(validateEmail("  GABRIEL@LIFTING.COM ").normalized).toBe("gabriel@lifting.com");
+    expect(validateEmail("  GABRIEL@LIFTO.COM ").normalized).toBe("gabriel@lifto.com");
     expect(validateEmail("gabriel@lifting")).toMatchObject({ isValid: false });
     expect(validateEmail("gabriel@lifting..com")).toMatchObject({ isValid: false });
   });
@@ -57,3 +57,4 @@ describe("auth business validators", () => {
     expect(hasPermission({ ...user("elite", "enterprise_admin"), status: "suspended" }, "elite:access")).toBe(false);
   });
 });
+

@@ -10,7 +10,6 @@ export type WorkoutXpInput = {
   allExercisesCompleted?: boolean;
   completedSets: number;
   daysSinceLastWorkout?: number;
-  durationMinutes?: number;
   streakDays?: number;
   totalSets: number;
   totalVolume: number;
@@ -53,18 +52,16 @@ export const calculateWorkoutXp = (input: WorkoutXpInput): WorkoutXpResult => {
 
   add(breakdown, "Treino concluido", completedWorkout ? 100 : 0);
   add(breakdown, "Sem series incompletas", completedWorkout && input.completedSets === input.totalSets ? 25 : 0);
-  add(breakdown, "Treino acima de 45 minutos", (input.durationMinutes ?? 0) >= 45 ? 20 : 0);
-  add(breakdown, "Treino acima de 90 minutos", (input.durationMinutes ?? 0) >= 90 ? 40 : 0);
   add(breakdown, "Todos os exercicios completos", input.allExercisesCompleted ? 50 : 0);
 
   add(breakdown, "Volume medio", input.totalVolume >= 5_000 ? 20 : 0);
   add(breakdown, "Volume alto", input.totalVolume >= 15_000 ? 50 : 0);
   add(breakdown, "Volume extremo", input.totalVolume >= 30_000 ? 100 : 0);
 
-  add(breakdown, "3 dias seguidos", (input.streakDays ?? 0) >= 3 ? 50 : 0);
-  add(breakdown, "7 dias seguidos", (input.streakDays ?? 0) >= 7 ? 150 : 0);
-  add(breakdown, "14 dias seguidos", (input.streakDays ?? 0) >= 14 ? 350 : 0);
-  add(breakdown, "30 dias seguidos", (input.streakDays ?? 0) >= 30 ? 1_000 : 0);
+  add(breakdown, "3 dias seguidos", (input.streakDays ?? 0) >= 3 ? 60 : 0);
+  add(breakdown, "7 dias seguidos", (input.streakDays ?? 0) >= 7 ? 165 : 0);
+  add(breakdown, "14 dias seguidos", (input.streakDays ?? 0) >= 14 ? 365 : 0);
+  add(breakdown, "30 dias seguidos", (input.streakDays ?? 0) >= 30 ? 1_020 : 0);
   add(breakdown, "60 dias seguidos", (input.streakDays ?? 0) >= 60 ? 2_500 : 0);
   add(breakdown, "100 dias seguidos", (input.streakDays ?? 0) >= 100 ? 5_000 : 0);
   add(breakdown, "365 dias seguidos", (input.streakDays ?? 0) >= 365 ? 15_000 : 0);

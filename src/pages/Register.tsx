@@ -62,7 +62,7 @@ export default function Register({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-[var(--fg-2)]">
             Senha
-            <input className="input" onChange={(event) => setPassword(event.target.value)} placeholder="Lifting123" type="password" value={password} />
+            <input className="input" onChange={(event) => setPassword(event.target.value)} placeholder="Lifto123" type="password" value={password} />
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-[var(--fg-2)]">
             Confirmar senha

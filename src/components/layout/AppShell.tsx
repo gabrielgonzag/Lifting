@@ -35,7 +35,7 @@ function Wordmark() {
           <path d="M5 7v10M9 4v16M15 4v16M19 7v10M3 12h2M19 12h2M9 12h6" stroke="#0a0a0a" strokeLinecap="round" strokeWidth="2.4" />
         </svg>
       </div>
-      <span>LIFTING</span>
+      <span>LIFTO</span>
     </div>
   );
 }
@@ -64,7 +64,7 @@ function UserChip({ active, onOpen, user }: { active: boolean; onOpen: () => voi
         {user?.avatarUrl ? <img alt="" className="h-full w-full object-cover" src={user.avatarUrl} /> : initials}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifting"}</p>
+        <p className="truncate text-sm font-semibold text-[var(--fg)]">{user?.name ?? "Lifto"}</p>
         <div className="mt-1 flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 rounded bg-[var(--lime)] px-1.5 py-0.5 text-[8px] font-black uppercase leading-none text-zinc-950">LVL {level}</span>
           <p className="min-w-0 truncate text-[9px] font-bold uppercase tracking-wider text-[var(--lime)]">

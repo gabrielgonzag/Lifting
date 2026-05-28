@@ -1,4 +1,4 @@
-/* LIFTING — shared data, helpers, icons */
+/* LIFTO — shared data, helpers, icons */
 
 // ───────── Exercise catalog ─────────
 const CATALOG = {

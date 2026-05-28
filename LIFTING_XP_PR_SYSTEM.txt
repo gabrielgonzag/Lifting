@@ -1,10 +1,10 @@
-LIFTING - SISTEMA DE XP E PR
+LIFTO - SISTEMA DE XP E PR
 
-Este documento descreve o sistema atual de XP, Iron Streak e Personal Records do LIFTING.
+Este documento descreve o sistema atual de XP, Iron Streak e Personal Records do LIFTO.
 
 OBJETIVO
 
-O XP do LIFTING representa disciplina, consistencia, intensidade, longevidade e evolucao real.
+O XP do LIFTO representa disciplina, consistencia, intensidade, longevidade e evolucao real.
 
 O sistema nao deve recompensar spam, login diario, PR falso ou manipulacao de carga.
 O cliente exibe progresso, mas nao deve ser a fonte oficial de XP, titulos, conquistas ou PRs.
@@ -34,6 +34,7 @@ Arquivos principais:
 - supabase/migrations/20260527190000_secure_gamification_and_audit.sql
 - supabase/migrations/20260527201000_smart_xp_pr_system.sql
 - supabase/migrations/20260528120000_remove_pr_xp_and_frequency_streak.sql
+- supabase/migrations/20260528123000_move_duration_xp_to_streak.sql
 
 TABELAS OFICIAIS
 
@@ -51,12 +52,6 @@ Treino concluido:
 
 Treino concluido sem series incompletas:
 +25 XP
-
-Treino acima de 45 minutos:
-+20 XP
-
-Treino acima de 90 minutos:
-+40 XP
 
 Treino com todos os exercicios completos:
 +50 XP
@@ -87,16 +82,16 @@ Volume extremo:
 XP DE CONSISTENCIA
 
 3 dias seguidos:
-+50 XP
++60 XP
 
 7 dias:
-+150 XP
++165 XP
 
 14 dias:
-+350 XP
++365 XP
 
 30 dias:
-+1000 XP
++1020 XP
 
 60 dias:
 +2500 XP

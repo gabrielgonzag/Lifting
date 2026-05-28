@@ -1,4 +1,4 @@
-/* LIFTING — Login, Home, Fichas screens */
+/* LIFTO — Login, Home, Fichas screens */
 
 // ───────── LOGIN ─────────
 function LoginScreen({ onLogin, isMobile }) {
@@ -54,7 +54,7 @@ function LoginScreen({ onLogin, isMobile }) {
             <div style={{
               fontSize: isMobile ? 44 : 60, fontWeight: 900, letterSpacing: '-0.045em',
               lineHeight: 0.95,
-            }}>LIFTING</div>
+            }}>LIFTO</div>
             <div style={{
               marginTop: isMobile ? 10 : 14, color: 'var(--fg-2)',
               fontSize: isMobile ? 15 : 18, fontWeight: 400, letterSpacing: '-0.01em',
@@ -108,7 +108,7 @@ function LoginScreen({ onLogin, isMobile }) {
         fontSize: 11, color: 'var(--fg-4)', letterSpacing: 0.04,
       }}>
         <span>v2.4.1</span>
-        <span>© 2026 LIFTING</span>
+        <span>© 2026 LIFTO</span>
       </div>
     </div>
   );

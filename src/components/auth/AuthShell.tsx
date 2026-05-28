@@ -44,7 +44,7 @@ export function AuthShell({ children, kicker, title, copy }: { children: ReactNo
 
       <footer className="relative flex items-center justify-between px-6 py-5 text-xs tracking-wide text-[var(--fg-4)]">
         <span>v2.4.1</span>
-        <span>2026 LIFTING</span>
+        <span>2026 LIFTO</span>
       </footer>
     </div>
   );

@@ -42,7 +42,7 @@ vi.mock("../repositories/userRepository", () => ({
 const makeUser = (role: User["role"]): User => ({
   id: `${role}-user`,
   name: "Gabriel",
-  email: "gabriel@lifting.test",
+  email: "gabriel@lifto.test",
   emailVerified: true,
   role,
   plan: role === "professional" ? "coach" : role === "admin" ? "elite" : "entry",
@@ -100,13 +100,13 @@ describe("auth service", () => {
 
     const result = await authService.register({
       name: "Gabriel",
-      email: " GABRIEL@LIFTING.TEST ",
+      email: " GABRIEL@LIFTO.TEST ",
       password: "Strong123",
       role: "casual",
     });
 
     expect(mocks.signUp).toHaveBeenCalledWith({
-      email: "gabriel@lifting.test",
+      email: "gabriel@lifto.test",
       password: "Strong123",
       options: {
         data: {
@@ -117,7 +117,7 @@ describe("auth service", () => {
     });
     expect(result).toMatchObject({
       ok: true,
-      email: "gabriel@lifting.test",
+      email: "gabriel@lifto.test",
       requiresEmailConfirmation: true,
     });
   });
@@ -129,12 +129,12 @@ describe("auth service", () => {
     mocks.ensureSupabaseProfile.mockResolvedValue(casual);
 
     const result = await authService.login({
-      email: " GABRIEL@LIFTING.TEST ",
+      email: " GABRIEL@LIFTO.TEST ",
       password: "Strong123",
     });
 
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
-      email: "gabriel@lifting.test",
+      email: "gabriel@lifto.test",
       password: "Strong123",
     });
     expect(result).toMatchObject({
@@ -208,15 +208,15 @@ describe("auth service", () => {
     const { authService } = await import("./authService");
     mocks.resend.mockResolvedValue({ error: null });
 
-    const result = await authService.resendEmailConfirmation("  GABRIEL@LIFTING.TEST ");
+    const result = await authService.resendEmailConfirmation("  GABRIEL@LIFTO.TEST ");
 
     expect(mocks.resend).toHaveBeenCalledWith({
       type: "signup",
-      email: "gabriel@lifting.test",
+      email: "gabriel@lifto.test",
     });
     expect(result).toMatchObject({
       ok: true,
-      email: "gabriel@lifting.test",
+      email: "gabriel@lifto.test",
       requiresEmailConfirmation: true,
     });
   });
@@ -225,12 +225,13 @@ describe("auth service", () => {
     const { authService } = await import("./authService");
     mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
 
-    const result = await authService.resetPassword("  GABRIEL@LIFTING.TEST ");
+    const result = await authService.resetPassword("  GABRIEL@LIFTO.TEST ");
 
-    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("gabriel@lifting.test");
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("gabriel@lifto.test");
     expect(result).toMatchObject({
       ok: true,
       message: "Se houver uma conta, as instrucoes serao enviadas.",
     });
   });
 });
+

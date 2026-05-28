@@ -1,4 +1,4 @@
-/* LIFTING — main app: routing, state, viewport switching, tweaks */
+/* LIFTO — main app: routing, state, viewport switching, tweaks */
 
 const DEFAULT_USER = { name: 'Gabriel Gonzaga', plan: 'Casual' };
 

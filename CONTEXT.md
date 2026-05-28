@@ -1,10 +1,10 @@
-# LIFTING - Contexto Mestre do Sistema
+# LIFTO - Contexto Mestre do Sistema
 
-Este arquivo e a referencia principal para novas sessoes no projeto LIFTING. Leia antes de alterar autenticacao, rotas, persistencia, Supabase, treino, PRs ou design system.
+Este arquivo e a referencia principal para novas sessoes no projeto LIFTO. Leia antes de alterar autenticacao, rotas, persistencia, Supabase, treino, PRs ou design system.
 
 ## Produto
 
-LIFTING, antes chamado internamente de CONTENT.ENV, e um app fitness premium para:
+LIFTO, antes chamado internamente de CONTENT.ENV e LIFTING, e um app fitness premium para:
 
 - criar fichas de treino;
 - escolher exercicios por grupo muscular;
@@ -75,7 +75,7 @@ design/tweaks-panel.jsx
 Integracao atual:
 
 - `src/styles/globals.css` importa `design/tokens.css`.
-- `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile, menu mobile de perfil e wordmark LIFTING.
+- `src/components/layout/AppShell.tsx` usa shell novo: sidebar desktop, bottom nav mobile, menu mobile de perfil e wordmark LIFTO.
 - no mobile, a topbar de perfil do `AppShell` some ao rolar para baixo no scroll interno e reaparece ao rolar para cima.
 - `src/components/ui/Icon.tsx` contem icones customizados do design.
 - `src/components/ui/Toast.tsx` contem toast host/hook.
@@ -205,10 +205,10 @@ Configuracao esperada no Supabase:
 ```txt
 Authentication > URL Configuration
 Site URL:
-https://lifting-production.up.railway.app
+https://lifto-production.up.railway.app
 
 Redirect URLs:
-https://lifting-production.up.railway.app/auth/callback
+https://lifto-production.up.railway.app/auth/callback
 http://localhost:5173/auth/callback
 http://localhost:4173/auth/callback
 ```
@@ -587,6 +587,7 @@ src/features/achievements/achievements.ts
 supabase/migrations/20260527190000_secure_gamification_and_audit.sql
 supabase/migrations/20260527201000_smart_xp_pr_system.sql
 supabase/migrations/20260528120000_remove_pr_xp_and_frequency_streak.sql
+supabase/migrations/20260528123000_move_duration_xp_to_streak.sql
 ```
 
 Progressao:
@@ -609,11 +610,11 @@ XP:
 ```txt
 Treino concluido: +100 XP
 Treino sem series incompletas: +25 XP
-Treino acima de 45 min: +20 XP
-Treino acima de 90 min: +40 XP
 Todos os exercicios completos: +50 XP
 Volume medio/alto/extremo: +20/+50/+100 XP
-Streaks e longevidade aplicam bonus maiores em marcos raros
+Streaks recebem os pontos que antes vinham de duracao do treino
+3/7/14/30 dias seguidos: +60/+165/+365/+1020 XP
+Streaks longos e longevidade aplicam bonus maiores em marcos raros
 PR nao gera XP, nao altera streak e nao entra nos multiplicadores
 ```
 
@@ -873,6 +874,7 @@ npm run build - passou
 20260527190000_secure_gamification_and_audit.sql
 20260527201000_smart_xp_pr_system.sql
 20260528120000_remove_pr_xp_and_frequency_streak.sql
+20260528123000_move_duration_xp_to_streak.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
@@ -918,7 +920,7 @@ main
 Deploy conhecido:
 
 ```txt
-https://lifting-production.up.railway.app
+https://lifto-production.up.railway.app
 ```
 
 Antes de commit/push:

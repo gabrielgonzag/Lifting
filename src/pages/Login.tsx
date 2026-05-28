@@ -49,7 +49,7 @@ export default function Login({
   };
 
   return (
-    <AuthShell copy="Login rapido com Google em destaque, ou acesso manual para contas criadas por email." kicker="LIFTING" title="Entrar">
+    <AuthShell copy="Login rapido com Google em destaque, ou acesso manual para contas criadas por email." kicker="LIFTO" title="Entrar">
       <div className="grid gap-4">
         <button
           className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[var(--fg)] px-5 text-[15px] font-semibold text-[#0a0a0a] transition hover:bg-[var(--lime)] disabled:opacity-70"

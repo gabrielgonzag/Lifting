@@ -2,18 +2,20 @@ import { describe, expect, it } from "vitest";
 import { calculateWorkoutXp, ironStreakForWeek } from "./xpSystem";
 
 describe("xp system", () => {
-  it("rewards discipline and duration without using PR for XP", () => {
+  it("rewards discipline and streak without using duration or PR for XP", () => {
     const result = calculateWorkoutXp({
       allExercisesCompleted: true,
       completedSets: 12,
-      durationMinutes: 95,
+      streakDays: 7,
       totalSets: 12,
       totalVolume: 6_000,
     });
 
     expect(result.breakdown.some((item) => item.label === "Treino concluido" && item.xp === 100)).toBe(true);
     expect(result.breakdown.some((item) => item.label.includes("PR"))).toBe(false);
-    expect(result.breakdown.some((item) => item.label === "Treino acima de 90 minutos" && item.xp === 40)).toBe(true);
+    expect(result.breakdown.some((item) => item.label.includes("minutos"))).toBe(false);
+    expect(result.breakdown.some((item) => item.label === "3 dias seguidos" && item.xp === 60)).toBe(true);
+    expect(result.breakdown.some((item) => item.label === "7 dias seguidos" && item.xp === 165)).toBe(true);
     expect(result.totalXp).toBeGreaterThan(100);
   });
 

@@ -17,7 +17,7 @@ describe("audit service", () => {
     await auditService.record({
       eventType: "login_failed",
       metadata: {
-        email: "gabriel@lifting.test",
+        email: "gabriel@lifto.test",
         password: "secret",
         refresh_token: "token",
       },
@@ -27,9 +27,10 @@ describe("audit service", () => {
 
     expect(create).toHaveBeenCalledWith({
       eventType: "login_failed",
-      metadata: { email: "gabriel@lifting.test" },
+      metadata: { email: "gabriel@lifto.test" },
       severity: "warning",
       userId: "user-a",
     });
   });
 });
+

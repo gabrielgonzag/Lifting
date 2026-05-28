@@ -14,7 +14,7 @@ vi.mock("./databaseClient", () => ({
 
 const baseUser = (id: string, username: string): User => ({
   createdAt: "2026-05-26T00:00:00.000Z",
-  email: `${username}@lifting.test`,
+  email: `${username}@lifto.test`,
   emailVerified: true,
   id,
   name: "Gabriel Gonzaga",
@@ -123,3 +123,4 @@ describe("profile service", () => {
     expect(result.ok ? "" : result.errors.bio).toContain("160");
   });
 });
+

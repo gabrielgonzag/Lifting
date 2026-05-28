@@ -20,7 +20,7 @@ export function AuthFrame({
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,12,14,.96),rgba(10,12,14,.72)_42%,rgba(10,12,14,.24)),linear-gradient(180deg,rgba(183,243,77,.16),rgba(10,12,14,.86)_72%)]" />
           <div className="relative flex h-full flex-col justify-between p-8 xl:p-10">
             <div>
-              <p className="text-xs font-semibold uppercase text-lime">LIFTING</p>
+              <p className="text-xs font-semibold uppercase text-lime">LIFTO</p>
               <h1 className="mt-5 max-w-xl text-5xl font-bold leading-tight xl:text-6xl">
                 Treino, fichas e progresso em uma conta segura.
               </h1>
@@ -45,7 +45,7 @@ export function AuthFrame({
         <div className="flex min-h-[calc(100vh-2.5rem)] items-center px-5 py-8 sm:px-8 lg:min-h-0 lg:px-10 xl:px-14">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-10 lg:hidden">
-              <p className="text-xs font-semibold uppercase text-lime">LIFTING</p>
+              <p className="text-xs font-semibold uppercase text-lime">LIFTO</p>
               <h1 className="mt-3 text-3xl font-bold leading-tight">Seu treino agora tem conta.</h1>
             </div>
             <p className="text-sm font-semibold text-lime">{eyebrow}</p>
