@@ -18,5 +18,6 @@ export type DatabaseCollection =
   | "coach_notes"
   | "coach_student_progress"
   | "coach_training_context"
+  | "professional_verifications"
   | "security_audit_logs"
   | "user_progression";

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
   signOut: vi.fn(),
   signUp: vi.fn(),
+  startProfessionalSignup: vi.fn(),
 }));
 
 vi.mock("./databaseClient", () => ({
@@ -36,6 +37,12 @@ vi.mock("../repositories/userRepository", () => ({
   userRepository: {
     ensureSupabaseProfile: mocks.ensureSupabaseProfile,
     setSessionUserId: mocks.setSessionUserId,
+  },
+}));
+
+vi.mock("../repositories/professionalVerificationRepository", () => ({
+  professionalVerificationRepository: {
+    startSignup: mocks.startProfessionalSignup,
   },
 }));
 
@@ -119,6 +126,44 @@ describe("auth service", () => {
       ok: true,
       email: "gabriel@lifto.test",
       requiresEmailConfirmation: true,
+    });
+  });
+
+  it("starts professional verification without granting coach role on signup", async () => {
+    const { authService } = await import("./authService");
+    mocks.signUp.mockResolvedValue({
+      data: {
+        session: null,
+        user: { id: "new-professional", identities: [{ id: "identity" }] },
+      },
+      error: null,
+    });
+    mocks.startProfessionalSignup.mockResolvedValue({ id: "verification-1", status: "pending" });
+
+    const result = await authService.register({
+      name: "Gabriel Profissional",
+      email: "prof@lifto.test",
+      password: "Strong123",
+      role: "professional",
+      plan: "coach",
+    });
+
+    expect(mocks.signUp).toHaveBeenCalledWith(expect.objectContaining({
+      options: {
+        data: {
+          name: "Gabriel Profissional",
+          requested_account_type: "professional",
+        },
+      },
+    }));
+    expect(mocks.startProfessionalSignup).toHaveBeenCalledWith({
+      fullName: "Gabriel Profissional",
+      userId: "new-professional",
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      requiresEmailConfirmation: true,
+      requiresProfessionalVerification: true,
     });
   });
 

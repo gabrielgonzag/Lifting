@@ -1,5 +1,5 @@
 import type { AppRoute, AppView, User } from "../types";
-import { canAccessCoach, canAccessElite } from "../utils/validators/permissionValidator";
+import { canAccessCoach, canAccessElite, needsProfessionalVerification } from "../utils/validators/permissionValidator";
 
 export const routes: AppRoute[] = [
   "home",
@@ -15,10 +15,13 @@ export const routes: AppRoute[] = [
   "auth-error",
   "auth/callback",
   "verify-email",
+  "professional-verification",
   "professional",
   "coach",
   "coach/students",
   "coach/invites",
+  "coach/workouts",
+  "coach/profile",
   "elite",
   "admin",
 ];
@@ -30,6 +33,7 @@ export const appViews: AppView[] = ["home", "plans", "workout", "progress", "pro
 export const routeForUser = (user: User): AppRoute => {
   if (user.role === "admin") return "admin";
   if (canAccessElite(user)) return "elite";
+  if (needsProfessionalVerification(user)) return "professional-verification";
   if (canAccessCoach(user)) return "coach";
   return "home";
 };
@@ -59,7 +63,14 @@ export const guardRoute = ({
 
   if (route === "verify-email" && user.emailVerified && user.status === "active") return routeForUser(user);
   if (publicRoutes.includes(route)) return routeForUser(user);
-  if ((route === "professional" || route.startsWith("coach")) && !canAccessCoach(user)) return "home";
+  if (route === "professional-verification") {
+    if (needsProfessionalVerification(user)) return route;
+    return canAccessCoach(user) ? "coach" : "home";
+  }
+  if (route === "professional" || route.startsWith("coach")) {
+    if (canAccessCoach(user)) return route;
+    return needsProfessionalVerification(user) ? "professional-verification" : "home";
+  }
   if (route === "elite" && !canAccessElite(user)) return "home";
   if (route === "admin" && user.role !== "admin") return "home";
   return route;

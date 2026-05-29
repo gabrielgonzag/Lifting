@@ -13,6 +13,7 @@ const user = (plan: User["plan"], role: User["role"] = "casual"): User => ({
   role,
   plan,
   status: "active",
+  professionalVerificationStatus: role === "professional" ? "verified" : undefined,
   createdAt: "2026-05-23T00:00:00.000Z",
   updatedAt: "2026-05-23T00:00:00.000Z",
 });
@@ -47,6 +48,7 @@ describe("auth business validators", () => {
   it("separates role and plan for coach and elite access", () => {
     expect(canAccessCoach(user("coach", "casual"))).toBe(false);
     expect(canAccessCoach(user("coach", "professional"))).toBe(true);
+    expect(canAccessCoach({ ...user("coach", "professional"), professionalVerificationStatus: "manual_review" })).toBe(false);
     expect(canInviteStudents(user("coach", "professional"))).toBe(true);
     expect(canAccessElite(user("coach", "professional"))).toBe(false);
     expect(canAccessElite(user("elite", "enterprise_admin"))).toBe(true);

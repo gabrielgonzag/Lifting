@@ -34,9 +34,13 @@ export default function Register({
       name,
       password,
       role,
-      plan: role === "professional" ? "coach" : "entry",
+      plan: "entry",
     });
     if (result.ok && result.user) {
+      if (result.requiresProfessionalVerification) {
+        onNavigate("professional-verification");
+        return;
+      }
       onNavigate(routeForUser(result.user));
       return;
     }

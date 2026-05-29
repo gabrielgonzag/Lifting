@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AppShell } from "./components/layout/AppShell";
 import { useAppStore } from "./store/useAppStore";
 import { useAuthStore } from "./store/useAuthStore";
@@ -17,6 +17,7 @@ const Login = lazy(() => import("./pages/Login"));
 const ElitePlaceholder = lazy(() => import("./pages/ElitePlaceholder"));
 const Plans = lazy(() => import("./pages/Plans"));
 const Profile = lazy(() => import("./pages/Profile"));
+const ProfessionalVerification = lazy(() => import("./pages/ProfessionalVerification"));
 const ProfessionalDashboard = lazy(() => import("./pages/ProfessionalDashboard"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Register = lazy(() => import("./pages/Register"));
@@ -36,6 +37,7 @@ export default function App() {
   const loadUserData = useAppStore((state) => state.loadUserData);
   const syncProgression = useGamificationStore((state) => state.syncProgression);
   const clearProgression = useGamificationStore((state) => state.clearProgression);
+  const lastCoachGrantedAudit = useRef("");
 
   const navigate = (next: AppRoute) => {
     if (window.location.pathname === "/auth/callback") {
@@ -64,7 +66,7 @@ export default function App() {
   useEffect(() => {
     if (!isLoading && guardedRoute !== route) {
       void auditService.record({
-        eventType: "access_denied",
+        eventType: route === "professional" || route.startsWith("coach") ? "coach_access_denied" : "access_denied",
         metadata: { attemptedRoute: route, redirectedTo: guardedRoute },
         severity: user?.status === "suspended" ? "critical" : "warning",
         userId: user?.id,
@@ -72,6 +74,24 @@ export default function App() {
       navigate(guardedRoute);
     }
   }, [guardedRoute, isLoading, route]);
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      user?.id &&
+      guardedRoute === route &&
+      (guardedRoute === "professional" || guardedRoute.startsWith("coach")) &&
+      lastCoachGrantedAudit.current !== guardedRoute
+    ) {
+      lastCoachGrantedAudit.current = guardedRoute;
+      void auditService.record({
+        eventType: "coach_access_granted",
+        metadata: { route: guardedRoute },
+        severity: "info",
+        userId: user.id,
+      });
+    }
+  }, [guardedRoute, isLoading, route, user?.id]);
 
   if (isLoading) {
     return <div className="mx-auto mt-8 min-h-64 max-w-xl animate-pulse rounded-lg border border-white/10 bg-white/5" />;
@@ -128,6 +148,13 @@ export default function App() {
       </Suspense>
     );
   }
+  if (guardedRoute === "professional-verification") {
+    return (
+      <Suspense fallback={authFallback}>
+        <ProfessionalVerification onNavigate={navigate} />
+      </Suspense>
+    );
+  }
 
   const pageKey = guardedRoute.startsWith("coach/students/") ? "coach" : guardedRoute;
   const pageMap = {
@@ -141,6 +168,8 @@ export default function App() {
     coach: <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
     "coach/students": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
     "coach/invites": <ProfessionalDashboard onNavigate={navigate} route={guardedRoute} />,
+    "coach/profile": <ProfessionalDashboard onNavigate={navigate} route="coach" />,
+    "coach/workouts": <ProfessionalDashboard onNavigate={navigate} route="coach/students" />,
     elite: <ElitePlaceholder />,
     admin: <AdminPlaceholder />,
   };

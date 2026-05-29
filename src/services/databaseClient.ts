@@ -14,6 +14,7 @@ const collectionKeys: Record<DatabaseCollection, string> = {
   coach_notes: "lifto_coach_notes",
   coach_student_progress: "lifto_coach_student_progress",
   coach_training_context: "lifto_coach_training_context",
+  professional_verifications: "lifto_professional_verifications",
   security_audit_logs: "lifto_security_audit_logs",
   user_progression: "lifto_user_progression_cache",
 };
@@ -31,6 +32,7 @@ const legacyCollectionKeys: Partial<Record<DatabaseCollection, string[]>> = {
   coach_notes: ["lifting_coach_notes"],
   coach_student_progress: ["lifting_coach_student_progress"],
   coach_training_context: ["lifting_coach_training_context"],
+  professional_verifications: ["lifting_professional_verifications"],
   security_audit_logs: ["lifting_security_audit_logs"],
   user_progression: ["lifting_user_progression_cache"],
 };

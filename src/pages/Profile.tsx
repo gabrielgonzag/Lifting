@@ -23,6 +23,15 @@ const statusLabel: Record<User["status"], string> = {
   suspended: "Suspenso",
 };
 
+const professionalStatusLabel: Record<NonNullable<User["professionalVerificationStatus"]>, string> = {
+  auto_verified: "Verificado automaticamente",
+  expired: "Expirado",
+  manual_review: "Em analise",
+  pending: "Em analise",
+  rejected: "Recusado",
+  verified: "Verificado",
+};
+
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateCurrentUserProfile);
@@ -80,6 +89,12 @@ export default function Profile() {
     { icon: "profile", label: "Nivel atual", value: `LVL ${progression.level}`, sub: user.plan.toUpperCase() },
     { icon: "chart", label: "Melhor exercicio", value: bestExercise, sub: "com base nos PRs" },
   ];
+  const hasProfessionalRequest = Boolean(user.professionalVerificationStatus);
+  const isProfessionalPending =
+    user.professionalVerificationStatus === "pending" ||
+    user.professionalVerificationStatus === "manual_review" ||
+    user.professionalVerificationStatus === "rejected" ||
+    user.professionalVerificationStatus === "expired";
 
   const save = async (profile: EditableUserProfile) => {
     setSaving(true);
@@ -119,12 +134,29 @@ export default function Profile() {
 
         <section className="grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <ReadOnlyItem label="Email" value={user.email} />
-          <ReadOnlyItem label="Role" value={user.role} />
+          <ReadOnlyItem label="Tipo de conta" value={isProfessionalPending ? "Profissional pendente" : user.role} />
           <ReadOnlyItem label="Status" value={statusLabel[user.status]} />
+          {hasProfessionalRequest ? (
+            <ReadOnlyItem label="Status CREF" value={professionalStatusLabel[user.professionalVerificationStatus!]} />
+          ) : null}
           <ReadOnlyItem label="Conta criada" value={new Date(user.createdAt).toLocaleDateString("pt-BR")} />
           <ReadOnlyItem label="Verificacao" value={user.emailVerified ? "Email verificado" : "Email pendente"} />
           <ReadOnlyItem label="Ultima atualizacao" value={new Date(user.updatedAt).toLocaleDateString("pt-BR")} />
         </section>
+
+        {isProfessionalPending ? (
+          <section className="rounded-2xl border border-[var(--lime-line)] bg-[var(--lime-soft)] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wider text-[var(--lime)]">Verificacao profissional pendente</p>
+                <p className="mt-1 text-sm text-[var(--fg-2)]">Conclua a verificacao CREF para liberar a area Coach.</p>
+              </div>
+              <button className="btn btn-primary shrink-0" onClick={() => { window.location.hash = "professional-verification"; }} type="button">
+                Concluir verificacao CREF
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {editing ? <ProfileEditForm errors={errors} isSaving={saving} onCancel={() => setEditing(false)} onSave={save} user={user} /> : null}
 

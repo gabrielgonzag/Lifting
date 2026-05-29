@@ -23,6 +23,7 @@ type ProfileRow = {
   role: User["role"];
   plan: User["plan"] | "free" | "basic" | "professional" | "enterprise";
   status?: User["status"] | null;
+  professional_verification_status?: User["professionalVerificationStatus"] | null;
   created_at: string;
   updated_at: string;
 };
@@ -50,6 +51,7 @@ const profileToUser = (profile: ProfileRow): User => ({
   role: normalizeRole(profile.role),
   plan: normalizePlan(profile.plan),
   status: profile.status ?? (profile.email_verified === false ? "pending_verification" : "active"),
+  professionalVerificationStatus: profile.professional_verification_status ?? undefined,
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
 });
@@ -75,6 +77,18 @@ export const userRepository = {
       users().map((user) => {
         if (user.id !== id) return user;
         const next = { ...user, ...profile, updatedAt: new Date().toISOString() };
+        updated = publicUser(next);
+        return next;
+      }),
+    );
+    return updated;
+  },
+  updateProfessionalVerificationStatus(id: string, professionalVerificationStatus: User["professionalVerificationStatus"]) {
+    let updated: User | undefined;
+    saveUsers(
+      users().map((user) => {
+        if (user.id !== id) return user;
+        const next = { ...user, professionalVerificationStatus, updatedAt: new Date().toISOString() };
         updated = publicUser(next);
         return next;
       }),

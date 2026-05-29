@@ -14,7 +14,16 @@ export type {
   StudentProgressPoint,
   StudentWorkoutHistory,
 } from "./student";
-export type { EditableUserProfile, User, UserExperienceLevel, UserGoal, UserPlan, UserRole, UserStatus } from "./user";
+export type {
+  EditableUserProfile,
+  ProfessionalVerificationStatus,
+  User,
+  UserExperienceLevel,
+  UserGoal,
+  UserPlan,
+  UserRole,
+  UserStatus,
+} from "./user";
 export type { CoachTrainingContext, CoachWorkoutSyncPayload, WorkoutSyncResult } from "./workout";
 
 export type Category = "membros superiores" | "membros inferiores";
@@ -93,7 +102,9 @@ export type CoachRoute =
   | `coach/students/${string}`
   | `coach/students/${string}/workouts`
   | `coach/students/${string}/progress`
-  | "coach/invites";
+  | "coach/invites"
+  | "coach/profile"
+  | "coach/workouts";
 
 export type AppRoute =
   | AppView
@@ -104,6 +115,7 @@ export type AppRoute =
   | "auth-error"
   | "auth/callback"
   | "verify-email"
+  | "professional-verification"
   | "professional"
   | "elite"
   | "admin"

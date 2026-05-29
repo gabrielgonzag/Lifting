@@ -1,3 +1,4 @@
+import { professionalVerificationRepository } from "../repositories/professionalVerificationRepository";
 import { userRepository } from "../repositories/userRepository";
 import type { AuthResult, LoginInput, RegisterInput } from "../types";
 import { canAccessCoach } from "../utils/validators/permissionValidator";
@@ -165,13 +166,14 @@ export const authService = {
     if (!supabase) return { ok: false, message: missingSupabaseMessage };
 
     const email = emailValidation.normalized;
+    const wantsProfessional = input.role === "professional";
     const { data, error } = await supabase.auth.signUp({
       email,
       password: input.password,
       options: {
         data: {
           name,
-          requested_account_type: input.role === "professional" ? "professional" : "casual",
+          requested_account_type: wantsProfessional ? "professional" : "casual",
         },
       },
     });
@@ -188,12 +190,28 @@ export const authService = {
     if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       return { ok: false, email, message: duplicateEmailMessage };
     }
+    if (wantsProfessional) {
+      await auditService.record({
+        eventType: "professional_signup_started",
+        metadata: { email },
+        severity: "info",
+        userId: data.user.id,
+      });
+      await professionalVerificationRepository.startSignup({ fullName: name, userId: data.user.id });
+      await auditService.record({
+        eventType: "professional_verification_pending",
+        metadata: { source: "signup" },
+        severity: "info",
+        userId: data.user.id,
+      });
+    }
     if (!data.session) {
       await auditService.record({ eventType: "signup", metadata: { email }, severity: "info", userId: data.user.id });
       return {
         ok: true,
         email,
         message: pendingConfirmationMessage,
+        requiresProfessionalVerification: wantsProfessional,
         requiresEmailConfirmation: true,
       };
     }
@@ -205,11 +223,14 @@ export const authService = {
         ok: true,
         email,
         message: pendingConfirmationMessage,
+        requiresProfessionalVerification: wantsProfessional,
         requiresEmailConfirmation: true,
       };
     }
     if (profile) await auditService.record({ eventType: "signup", severity: "info", userId: profile.id });
-    return profile ? { ok: true, user: profile } : { ok: false, message: "Conta criada. Entre novamente." };
+    return profile
+      ? { ok: true, requiresProfessionalVerification: wantsProfessional && profile.professionalVerificationStatus === "pending", user: profile }
+      : { ok: false, message: "Conta criada. Entre novamente." };
   },
   async resendEmailConfirmation(email: string): Promise<AuthResult> {
     const emailValidation = validationService.validateEmail(email);

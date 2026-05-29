@@ -15,7 +15,7 @@ const maxAvatarSize = 2 * 1024 * 1024;
 
 const cleanText = (value?: string) => value?.trim().replace(/\s+/g, " ") ?? "";
 const cleanUsername = (value?: string) => cleanText(value).toLowerCase();
-const protectedProfileFields = new Set(["createdAt", "emailVerified", "plan", "role", "status", "updatedAt"]);
+const protectedProfileFields = new Set(["createdAt", "emailVerified", "plan", "professionalVerificationStatus", "role", "status", "updatedAt"]);
 
 export const profileService = {
   async validateProfile(userId: string, input: Partial<EditableUserProfile>): Promise<ProfileValidationResult> {

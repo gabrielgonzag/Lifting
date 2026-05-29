@@ -6,6 +6,8 @@ import {
   canInviteStudents,
   canManageStudents,
   hasPermission,
+  isVerifiedCoachProfessional,
+  needsProfessionalVerification,
 } from "../utils/validators/permissionValidator";
 
 export const permissionService = {
@@ -17,4 +19,6 @@ export const permissionService = {
   canInviteStudents,
   canManageStudents,
   canAccessAdvancedAnalytics,
+  isVerifiedCoachProfessional,
+  needsProfessionalVerification,
 };

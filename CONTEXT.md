@@ -250,6 +250,7 @@ Tipos:
 UserRole = "casual" | "professional" | "enterprise_admin" | "instructor" | "admin";
 UserPlan = "entry" | "core" | "coach" | "elite";
 UserStatus = "pending_verification" | "active" | "suspended";
+ProfessionalVerificationStatus = "pending" | "auto_verified" | "manual_review" | "verified" | "rejected" | "expired";
 ```
 
 Usuario:
@@ -268,6 +269,7 @@ User {
   role;
   plan;
   status;
+  professionalVerificationStatus?;
   createdAt;
   updatedAt;
 }
@@ -283,6 +285,8 @@ Regra de seguranca:
 - RLS e triggers nao devem ser removidos.
 - `bio`, `avatarUrl`, `name` e `username` sao editaveis pelo usuario via `profileService`;
 - `role`, `plan`, `status` e `emailVerified` continuam somente leitura no frontend.
+- `professionalVerificationStatus` tambem e somente leitura no frontend e libera Coach apenas quando `verified` ou `auto_verified`.
+- usuarios comuns podem ter `professionalVerificationStatus` ausente; `pending` indica que houve solicitacao profissional.
 
 Migration de profile atual:
 
@@ -367,7 +371,11 @@ Regras:
 - `core`: recursos individuais premium;
 - `coach`: painel profissional;
 - `elite`: areas enterprise;
-- role e plan sao avaliados juntos para coach/elite.
+- role, plan e verificacao CREF sao avaliados juntos para Coach;
+- Coach exige `role = professional | instructor`, `plan >= coach` e `professionalVerificationStatus = verified | auto_verified`;
+- usuario com solicitacao profissional pendente e redirecionado para `professional-verification`;
+- usuario comum que tenta acessar Coach volta para `home`;
+- Elite continua validado por plano/role separado.
 
 ## Rotas
 
@@ -387,10 +395,13 @@ auth-success
 auth-error
 auth/callback
 verify-email
+professional-verification
 professional
 coach
 coach/students
 coach/invites
+coach/workouts
+coach/profile
 elite
 admin
 ```
@@ -420,6 +431,7 @@ Protecao:
 - deslogado em rota privada vai para `login`;
 - logado em rota publica vai para rota correta;
 - usuario pendente vai para `verify-email`;
+- profissional sem CREF verificado vai para `professional-verification`;
 - casual nao acessa `coach`, `elite` ou `admin`;
 - coach nao acessa `elite`;
 - admin acessa tudo.
@@ -897,16 +909,19 @@ Tela:
 
 ```txt
 src/pages/ProfessionalDashboard.tsx
+src/pages/ProfessionalVerification.tsx
 ```
 
 Servicos/repositories:
 
 ```txt
+src/services/crefVerificationService.ts
 src/services/coachService.ts
 src/services/coachTrainingService.ts
 src/services/inviteService.ts
 src/services/sharedWorkoutService.ts
 src/services/studentService.ts
+src/repositories/professionalVerificationRepository.ts
 src/repositories/coachRepository.ts
 src/repositories/coachTrainingRepository.ts
 src/repositories/inviteRepository.ts
@@ -917,6 +932,16 @@ src/repositories/studentRepository.ts
 Estado:
 
 - painel existe como fundacao;
+- area Coach foi restaurada/protegida por verificacao profissional CREF;
+- rotas Coach atuais: `coach`, `coach/students`, `coach/invites`, `coach/workouts`, `coach/profile`;
+- tela `professional-verification` coleta nome completo, CPF, CREF, regiao, categoria, carteira opcional, aceite de termos e autorizacao de consulta publica;
+- CPF puro nao e persistido; o service envia apenas hash para `professional_verifications`;
+- a consulta automatizada fica isolada por `CrefVerificationProvider` e nao faz scraping no frontend;
+- sem backend/fonte oficial, o status inicial seguro e `manual_review`;
+- cadastro profissional cria/atualiza uma solicitacao inicial `pending`, mas nao concede role/plan profissional;
+- auto-verificacao nao e aceita pelo RPC publico; aprovacao real deve vir de backend/service role via `approve_professional_verification()`;
+- somente `verified` ou `auto_verified` libera Coach;
+- eventos `professional_signup_started`, `professional_verification_pending`, `professional_verification_submitted`, `professional_manual_review`, `professional_verification_rejected`, `professional_verified`, `coach_access_denied` e `coach_access_granted` sao auditados;
 - dados de coach possuem mocks/estrutura;
 - PRs e sessoes marcadas devem futuramente aparecer melhor no painel do coach;
 - funcionalidades enterprise completas ainda sao futuras.
@@ -982,6 +1007,7 @@ src/features/workout-dna/workoutDna.test.ts
 src/repositories/workoutRepository.test.ts
 src/services/auditService.test.ts
 src/services/authService.test.ts
+src/services/crefVerificationService.test.ts
 src/services/databaseClient.test.ts
 src/services/gamificationService.test.ts
 src/services/profileService.test.ts
@@ -1002,7 +1028,7 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 50 testes passaram
+npm run test  - 54 testes passaram
 npm run build - passou
 ```
 
@@ -1025,6 +1051,7 @@ npm run build - passou
 20260527201000_smart_xp_pr_system.sql
 20260528120000_remove_pr_xp_and_frequency_streak.sql
 20260528123000_move_duration_xp_to_streak.sql
+20260529120000_professional_cref_verification.sql
 ```
 
 Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
@@ -1109,7 +1136,7 @@ O sistema esta em transicao de app local para produto SaaS fitness:
 - Lifto Legacy System MVP exibe marcos narrativos no perfil sem persistencia nova;
 - gamificacao sincroniza XP, nivel, conquistas e titulos oficiais via Supabase/RPC;
 - auditoria de eventos sensiveis foi adicionada com sanitizacao de metadata;
-- painel profissional preparado;
+- painel profissional restaurado e protegido por verificacao CREF;
 - perfil de usuario com edicao segura e estatisticas pessoais;
 - rotas protegidas;
 - design system premium aplicado nas telas principais.
@@ -1118,11 +1145,12 @@ Prioridades atuais:
 
 1. garantir migrations aplicadas no Supabase remoto;
 2. validar auth Google e email/senha em producao;
-3. alinhar backend para criacao segura de profissionais/coaches se esse fluxo for liberado;
-4. evoluir painel do coach para destacar PRs dos alunos;
-5. aplicar migrations `20260526013000_add_profile_details.sql` e `20260527190000_secure_gamification_and_audit.sql` no Supabase remoto;
-6. validar a RPC `sync_user_progression()` em producao apos aplicar migrations;
-7. continuar migrando telas remanescentes para o design system novo;
-8. evoluir Workout DNA para coach dashboard e insights mais refinados;
-9. avaliar persistencia futura de `legacy_events` somente se snapshots historicos forem necessarios;
-10. fases futuras planejadas: Desafios Sociais controlados e Tribos Privadas.
+3. aplicar migration `20260529120000_professional_cref_verification.sql` no Supabase remoto;
+4. conectar provider server-side oficial para consulta CREF/CONFEF quando houver fonte publica confiavel;
+5. evoluir painel do coach para destacar PRs dos alunos;
+6. aplicar migrations `20260526013000_add_profile_details.sql` e `20260527190000_secure_gamification_and_audit.sql` no Supabase remoto;
+7. validar a RPC `sync_user_progression()` em producao apos aplicar migrations;
+8. continuar migrando telas remanescentes para o design system novo;
+9. evoluir Workout DNA para coach dashboard e insights mais refinados;
+10. avaliar persistencia futura de `legacy_events` somente se snapshots historicos forem necessarios;
+11. fases futuras planejadas: Desafios Sociais controlados e Tribos Privadas.
