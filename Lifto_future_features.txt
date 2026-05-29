@@ -1,0 +1,292 @@
+LIFTO - ANÁLISE DE VIABILIDADE DE FUNCIONALIDADES FUTURAS
+Objetivo
+
+NÃO IMPLEMENTAR NADA.
+
+O objetivo deste documento é realizar uma análise técnica, de produto, UX, arquitetura, monetização e escalabilidade das funcionalidades listadas abaixo.
+
+A resposta deve ser exclusivamente analítica.
+
+Não gerar código.
+Não criar migrations.
+Não criar componentes.
+Não modificar arquivos.
+Não executar tarefas.
+
+Apenas analisar.
+
+Contexto
+
+O LIFTO já possui:
+
+Sistema de treino
+Fichas de treino
+Exercícios
+Registro de séries
+PRs
+Progressão
+Gamificação
+XP
+Níveis
+Conquistas
+Títulos
+Perfis
+Coach Dashboard
+Supabase
+Sistema SaaS em construção
+
+A intenção NÃO é copiar GymRats, Hevy ou Strong.
+
+A intenção é identificar funcionalidades capazes de transformar o Lifto em um produto mais único, memorável e defensável no mercado.
+
+Funcionalidade 1 — Lifto Legacy System
+Conceito
+
+Transformar a jornada fitness do usuário em um legado permanente dentro da plataforma.
+
+Em vez de apenas registrar treinos, o sistema registra a história completa da evolução física.
+
+Exemplos:
+
+Primeiros treinos
+Primeiros PRs
+Marcos importantes
+Fotos de evolução
+Streaks históricos
+Mudanças corporais
+Conquistas raras
+Títulos conquistados
+Linha do tempo pessoal
+
+O usuário passa a ter uma espécie de "carreira fitness".
+
+O que analisar
+Produto
+Existe valor real?
+Resolve um problema?
+Gera retenção?
+Gera apego emocional?
+Mercado
+Existem concorrentes fazendo isso?
+Quem faz melhor?
+Como o Lifto poderia diferenciar?
+UX
+Como evitar virar uma timeline poluída?
+Como tornar isso algo que o usuário realmente consulta?
+Dados
+Quais informações precisariam ser armazenadas?
+Qual crescimento esperado do volume de dados?
+Escalabilidade
+Impacto em storage
+Impacto em performance
+Impacto em custo
+Monetização
+Pode virar feature premium?
+Pode aumentar retenção?
+Complexidade
+
+Classificar:
+
+Baixa
+Média
+Alta
+Muito Alta
+Funcionalidade 2 — Tribos (Substituindo Ranking Tradicional)
+Conceito
+
+Ao invés de um ranking global de usuários.
+
+Criar grupos menores e mais relevantes.
+
+Exemplos:
+
+Tribo de hipertrofia
+Tribo de emagrecimento
+Tribo de powerlifting
+Tribo feminina
+Tribo de iniciantes
+Tribo de alunos de um coach
+Tribo de academia específica
+
+O foco deixa de ser competição global.
+
+Passa a ser pertencimento.
+
+O que analisar
+Produto
+É mais forte que ranking tradicional?
+Aumenta retenção?
+Cria comunidade?
+Mercado
+Quem faz isso atualmente?
+O GymRats faz algo parecido?
+Quais os resultados observados?
+UX
+Quantas tribos por usuário?
+Tribos públicas ou privadas?
+Necessidade de moderação?
+Arquitetura
+Como isso impactaria o banco?
+Impacto em notificações?
+Impacto em escalabilidade?
+Riscos
+Tribos abandonadas
+Spam
+Toxicidade
+Conteúdo inadequado
+Monetização
+Tribos exclusivas?
+Tribos de coaches?
+Complexidade
+
+Classificar:
+
+Baixa
+Média
+Alta
+Muito Alta
+Funcionalidade 3 — Workout DNA
+Conceito
+
+O sistema cria uma identidade comportamental do atleta.
+
+Com base no histórico de treino.
+
+Exemplos:
+
+Perfil mais força ou hipertrofia
+Grupos musculares mais treinados
+Grupos negligenciados
+Horários mais frequentes
+Frequência semanal
+Tendência de evolução
+Exercícios favoritos
+Padrões de consistência
+
+O objetivo é gerar insights automáticos.
+
+O que analisar
+Produto
+O usuário realmente se importa com isso?
+Isso gera valor recorrente?
+IA e Dados
+Precisa de IA?
+Pode ser feito apenas com regras?
+Quais métricas seriam mais relevantes?
+UX
+Como apresentar isso?
+Dashboard?
+Perfil?
+Relatório?
+Diferenciação
+Isso seria difícil de copiar?
+Isso gera identidade para o produto?
+Escalabilidade
+Impacto em processamento
+Impacto em banco
+Impacto em sincronização
+Monetização
+Pode virar recurso premium?
+Complexidade
+
+Classificar:
+
+Baixa
+Média
+Alta
+Muito Alta
+Funcionalidade 4 — Desafios Sociais
+Conceito
+
+Sistema de desafios coletivos.
+
+Exemplos:
+
+Treinar 4x por semana
+30 dias sem faltar
+10 treinos em um mês
+Desafio de consistência
+Desafio de volume
+Desafio de evolução
+
+Não focar apenas em carga ou PR.
+
+Evitar premiar apenas quem levanta mais peso.
+
+O que analisar
+Produto
+Aumenta retenção?
+Cria hábito?
+Cria efeito de rede?
+Mercado
+Como GymRats implementa?
+Como outros aplicativos implementam?
+UX
+Desafios individuais?
+Em grupo?
+Entre tribos?
+Entre alunos de um coach?
+Recompensas
+XP
+Conquistas
+Títulos
+Cosméticos
+Badges
+
+Quais funcionam melhor?
+
+Escalabilidade
+Impacto no banco
+Impacto em notificações
+Impacto em processamento
+Riscos
+Fraude
+Manipulação
+Abandono
+Monetização
+Existe potencial?
+Complexidade
+
+Classificar:
+
+Baixa
+Média
+Alta
+Muito Alta
+Entrega Esperada
+
+Para cada funcionalidade:
+
+Resumo executivo
+Benefícios
+Riscos
+Complexidade técnica
+Complexidade de produto
+Impacto em retenção
+Impacto em monetização
+Diferencial competitivo
+Recomendação (Implementar ou Não)
+Prioridade
+
+Classificar prioridade:
+
+P1 (Essencial)
+P2 (Importante)
+P3 (Futuro)
+P4 (Não recomendado)
+Etapa Final
+
+Após analisar todas as funcionalidades:
+
+Gerar uma tabela comparativa contendo:
+
+Valor para o usuário
+Potencial de retenção
+Potencial de monetização
+Complexidade
+Risco
+Diferencial competitivo
+
+E responder:
+
+"Se o objetivo fosse transformar o Lifto em um produto difícil de copiar e com potencial real de crescimento, quais dessas funcionalidades deveriam ser implementadas primeiro e por quê?"

@@ -94,9 +94,13 @@ src/components/            Componentes reutilizaveis
 src/components/auth/       Shell e componentes de auth
 src/components/mobile/     Componentes exclusivos da experiencia mobile
 src/components/profile/    Header, stats, conquistas, formulario e avatar do perfil
+src/components/workout-dna/ Componentes do Workout DNA
+src/components/legacy/     Componentes do Lifto Legacy System
 src/features/              Areas de dominio, como auth e fichas
 src/features/gamification/ XP, nivel e progressao
 src/features/achievements/ Conquistas e raridades
+src/features/workout-dna/  Regras e service do perfil comportamental de treino
+src/features/legacy/       Regras e service dos marcos narrativos do usuario
 src/store/                 Stores Zustand
 src/services/              Regras de negocio/casos de uso
 src/repositories/          Persistencia local/Supabase
@@ -315,6 +319,9 @@ src/components/profile/ProfileAchievements.tsx
 src/components/profile/ProfileEditForm.tsx
 src/components/profile/AvatarUploader.tsx
 src/components/profile/LegacyTitles.tsx
+src/components/workout-dna/WorkoutDnaCard.tsx
+src/components/legacy/LegacySummary.tsx
+src/components/legacy/LegacyTimeline.tsx
 ```
 
 Service/repository:
@@ -333,6 +340,8 @@ Regras:
 - a topbar mobile do avatar usa animacao de slide e nao altera o layout desktop.
 - perfil exibe avatar, nome, username, email, plano, role, status, data de criacao, nivel, XP, treinos, PRs, streak e conquistas recentes;
 - perfil exibe tambem Bodybuilding Legacy Titles, com titulo atual, tier, progresso, proximos titulos e destaque para MR. OLYMPIA;
+- perfil exibe Workout DNA, calculado dinamicamente a partir de treinos/PRs/streak, sem persistir XP ou conquistas oficiais;
+- perfil exibe Lifto Legacy System MVP, com marcos automaticos derivados de treinos, PRs, streak, volume e titulos;
 - usuario pode editar nome, username, avatar e bio;
 - username usa apenas letras, numeros, ponto e underline, minimo 3 caracteres e deve ser unico;
 - bio tem limite de 160 caracteres;
@@ -704,6 +713,134 @@ Regras:
 - componente no perfil exibe titulos oficiais vindos de `useGamificationStore.titleIds`;
 - fallback visual pode calcular progresso local, mas desbloqueio oficial vem do RPC/tabelas de gamificacao.
 
+## Workout DNA
+
+Arquivos:
+
+```txt
+src/features/workout-dna/workoutDnaTypes.ts
+src/features/workout-dna/workoutDnaRules.ts
+src/features/workout-dna/workoutDnaService.ts
+src/features/workout-dna/workoutDna.test.ts
+src/components/workout-dna/WorkoutDnaCard.tsx
+src/components/workout-dna/WorkoutDnaSummary.tsx
+```
+
+Objetivo:
+
+- responder "que tipo de atleta o usuario esta se tornando";
+- criar uma camada reutilizavel para perfil, progresso, legacy, coach dashboard, desafios e tribos futuras;
+- evitar dashboard tecnico pesado.
+
+MVP atual:
+
+- nao usa IA;
+- nao persiste em Supabase;
+- calcula dinamicamente a partir de `workout_sessions`, `personal_records`, `src/data/exercises.ts` e `useGamificationStore.streak`;
+- aparece como card completo em `Profile` e card compacto em `Progress`;
+- nao altera XP oficial, conquistas oficiais, PR oficial, permissoes, roles ou planos.
+
+Resultado calculado:
+
+```ts
+WorkoutDnaProfile {
+  archetype;
+  secondaryArchetype?;
+  summary;
+  strengths;
+  attentionPoints;
+  dominantGroups;
+  neglectedGroups;
+  favoriteExercises;
+  averageWeeklyFrequency;
+  dominantStyle;
+  scores: {
+    balance;
+    consistency;
+    strength;
+    volume;
+  };
+  totalVolume;
+  totalSets;
+  prCount;
+  workoutCount;
+}
+```
+
+Arquetipos:
+
+```txt
+Construtor  - volume consistente e evolucao gradual
+Tita        - foco em forca, cargas e PRs
+Incansavel  - alta frequencia e consistencia
+Especialista - foco forte em poucos grupos musculares
+Equilibrado - distribuicao mais balanceada
+```
+
+Regras:
+
+- logica fica em `workoutDnaRules.ts`, com funcoes puras e testaveis;
+- componentes apenas consomem o resultado do service;
+- dados inconsistentes devem gerar scores seguros, sem exceptions na UI;
+- usuario sem dados recebe perfil inicial seguro e pontos de atencao para gerar mais historico.
+
+## Lifto Legacy System
+
+Arquivos:
+
+```txt
+src/features/legacy/legacyTypes.ts
+src/features/legacy/legacyRules.ts
+src/features/legacy/legacyService.ts
+src/features/legacy/legacy.test.ts
+src/components/legacy/LegacySummary.tsx
+src/components/legacy/LegacyTimeline.tsx
+src/components/legacy/LegacyEventCard.tsx
+```
+
+Objetivo:
+
+- responder "qual historia esse usuario esta construindo com o treino";
+- transformar historico em narrativa fitness;
+- manter camada emocional/premium sem virar feed social.
+
+MVP atual:
+
+- nao usa fotos;
+- nao cria rede social, feed publico ou ranking;
+- nao persiste em Supabase;
+- calcula eventos dinamicamente a partir de sessoes, PRs, `user_progression`, `user_titles` e estatisticas locais/fallback;
+- aparece no perfil como secao "Legacy".
+
+Eventos automaticos atuais:
+
+```txt
+primeiro treino
+10 treinos
+50 treinos
+100 treinos
+primeiro PR
+PR de impacto
+streak de 7 dias
+streak de 30 dias
+volume historico
+titulo conquistado
+```
+
+Decisao de persistencia:
+
+- foi escolhida a opcao dinamica para o MVP;
+- nenhuma migration Supabase foi criada;
+- se no futuro for criada `legacy_events`, antes listar tabela, colunas, indexes, policies, risco de dados existentes e RLS/ownership;
+- fotos de evolucao exigem Supabase Storage, privacidade, custo e RLS, e nao fazem parte do MVP atual.
+
+Regras:
+
+- eventos devem ser deduplicados;
+- eventos devem ser derivados de dados reais existentes;
+- frontend nao pode criar XP oficial, conquista oficial ou permissao privilegiada por causa do Legacy;
+- DNA pode alimentar Legacy futuramente, mas no MVP as features permanecem desacopladas.
+
 ## Auditoria e Hardening
 
 Arquivos:
@@ -749,6 +886,7 @@ Direcao:
 - grafico de PR/evolucao de forca;
 - grafico de frequencia;
 - insights e conquistas recentes;
+- inclui card compacto de Workout DNA como camada identitaria, sem transformar a tela em dashboard tecnico;
 - evitar excesso de dashboard.
 
 `Progress.tsx` usa grafico SVG proprio para linha/barra. Recharts permanece no bundle para telas/componentes que ainda usam graficos, mas deve ser lazy quando possivel.
@@ -836,8 +974,17 @@ npm run build:analyze
 Testes:
 
 ```txt
-src/services/authService.test.ts
+src/features/gamification/titles.test.ts
+src/features/gamification/useGamificationStore.test.ts
+src/features/gamification/xpSystem.test.ts
+src/features/legacy/legacy.test.ts
+src/features/workout-dna/workoutDna.test.ts
 src/repositories/workoutRepository.test.ts
+src/services/auditService.test.ts
+src/services/authService.test.ts
+src/services/databaseClient.test.ts
+src/services/gamificationService.test.ts
+src/services/profileService.test.ts
 src/utils/records.test.ts
 src/utils/routeGuards.test.ts
 src/utils/validators/authValidators.test.ts
@@ -855,7 +1002,7 @@ Ultima verificacao conhecida:
 
 ```txt
 npm run lint  - passou
-npm run test  - 43 testes passaram
+npm run test  - 50 testes passaram
 npm run build - passou
 ```
 
@@ -888,6 +1035,7 @@ Nao remover migrations antigas sem cuidado. A historia do banco depende delas.
 LIFTING_AUTH_BUSINESS_RULES.txt
 LIFTING_IMPLEMENTED_BUSINESS_RULES.txt
 LIFTING_GOOGLE_OAUTH_ERROR.md
+Lifto_future_features.txt
 CONTEXT.md
 content_env_master_prompt.md
 ```
@@ -957,6 +1105,8 @@ O sistema esta em transicao de app local para produto SaaS fitness:
 - fichas e treinos persistidos por usuario;
 - PR substituiu RPE no fluxo de treino;
 - progresso com graficos e insights;
+- Workout DNA dinamico identifica arquetipo, estilo, scores e pontos fortes/de atencao do usuario;
+- Lifto Legacy System MVP exibe marcos narrativos no perfil sem persistencia nova;
 - gamificacao sincroniza XP, nivel, conquistas e titulos oficiais via Supabase/RPC;
 - auditoria de eventos sensiveis foi adicionada com sanitizacao de metadata;
 - painel profissional preparado;
@@ -972,4 +1122,7 @@ Prioridades atuais:
 4. evoluir painel do coach para destacar PRs dos alunos;
 5. aplicar migrations `20260526013000_add_profile_details.sql` e `20260527190000_secure_gamification_and_audit.sql` no Supabase remoto;
 6. validar a RPC `sync_user_progression()` em producao apos aplicar migrations;
-7. continuar migrando telas remanescentes para o design system novo.
+7. continuar migrando telas remanescentes para o design system novo;
+8. evoluir Workout DNA para coach dashboard e insights mais refinados;
+9. avaliar persistencia futura de `legacy_events` somente se snapshots historicos forem necessarios;
+10. fases futuras planejadas: Desafios Sociais controlados e Tribos Privadas.

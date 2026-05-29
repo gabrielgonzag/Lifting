@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
 import { LegacyTitles } from "../components/profile/LegacyTitles";
+import { LegacySummary } from "../components/legacy/LegacySummary";
 import { ProfileAchievements } from "../components/profile/ProfileAchievements";
 import { ProfileEditForm } from "../components/profile/ProfileEditForm";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
 import { ProfileStats, type ProfileStat } from "../components/profile/ProfileStats";
 import { Icon } from "../components/ui/Icon";
 import { useToast } from "../components/ui/Toast";
+import { WorkoutDnaCard } from "../components/workout-dna/WorkoutDnaCard";
 import { exercises } from "../data/exercises";
 import { useGamificationStore } from "../features/gamification/useGamificationStore";
+import { legacyService } from "../features/legacy/legacyService";
+import { workoutDnaService } from "../features/workout-dna/workoutDnaService";
 import { useAppStore } from "../store/useAppStore";
 import { useAuthStore } from "../store/useAuthStore";
 import type { EditableUserProfile, User } from "../types";
@@ -39,6 +43,25 @@ export default function Profile() {
   const totalVolume = useMemo(
     () => progression.totalVolume || sessions.reduce((total, session) => total + sessionVolume(session), 0),
     [progression.totalVolume, sessions],
+  );
+  const workoutDna = useMemo(
+    () => workoutDnaService.calculate({ personalRecords: records, sessions, streak: progression.streak }),
+    [progression.streak, records, sessions],
+  );
+  const legacy = useMemo(
+    () =>
+      legacyService.build({
+        personalRecords: records,
+        progression: {
+          currentTitleId: progression.currentTitleId,
+          streak: progression.streak,
+          titleIds: progression.titleIds,
+          totalVolume,
+          workoutsCompleted: progression.workoutsCompleted || sessions.length,
+        },
+        sessions,
+      }),
+    [progression.currentTitleId, progression.streak, progression.titleIds, progression.workoutsCompleted, records, sessions, totalVolume],
   );
 
   if (!user) {
@@ -106,6 +129,8 @@ export default function Profile() {
         {editing ? <ProfileEditForm errors={errors} isSaving={saving} onCancel={() => setEditing(false)} onSave={save} user={user} /> : null}
 
         <ProfileStats stats={stats} />
+        <WorkoutDnaCard dna={workoutDna} />
+        <LegacySummary legacy={legacy} />
         <LegacyTitles
           officialTitleIds={progression.titleIds}
           stats={{

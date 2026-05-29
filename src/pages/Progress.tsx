@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../components/ui/Icon";
+import { WorkoutDnaCard } from "../components/workout-dna/WorkoutDnaCard";
+import { useGamificationStore } from "../features/gamification/useGamificationStore";
+import { workoutDnaService } from "../features/workout-dna/workoutDnaService";
 import { useAppStore } from "../store/useAppStore";
 import type { PersonalRecord, WorkoutSession } from "../types";
 import { formatLongDate, inCurrentWeek } from "../utils/format";
@@ -11,6 +14,7 @@ type FrequencyPoint = { w: string; days: number };
 export default function Progress() {
   const sessions = useAppStore((state) => state.sessions);
   const records = useAppStore((state) => state.personalRecords);
+  const streak = useGamificationStore((state) => state.streak);
   const recordExercises = useMemo(
     () => [...new Map(records.map((record) => [record.exerciseId, record.exerciseName])).entries()],
     [records],
@@ -22,6 +26,10 @@ export default function Progress() {
   const frequencyData = useMemo(() => sessionsToFrequency(sessions), [sessions]);
   const recentRecord = [...records].sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime())[0];
   const strongestGrowth = useMemo(() => strongestGain(oneRmRecords), [oneRmRecords]);
+  const workoutDna = useMemo(
+    () => workoutDnaService.calculate({ personalRecords: records, sessions, streak }),
+    [records, sessions, streak],
+  );
 
   if (sessions.length === 0) {
     return (
@@ -63,6 +71,8 @@ export default function Progress() {
             </div>
           </div>
         </section>
+
+        <WorkoutDnaCard compact dna={workoutDna} />
 
         <section className="card card-pad anim-rise">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
