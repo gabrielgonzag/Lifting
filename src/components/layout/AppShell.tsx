@@ -24,6 +24,7 @@ const navForUser = (user?: User): NavItem[] => {
   const nav = [...baseNav];
   if (canAccessCoach(user)) nav.splice(3, 0, { route: "coach", active: (route) => route === "professional" || route.startsWith("coach"), icon: "list", label: "Coach" });
   if (canAccessElite(user)) nav.splice(4, 0, { route: "elite", active: (route) => route === "elite", icon: "sparkles", label: "Elite" });
+  if (user?.role === "admin") nav.push({ route: "admin", active: (route) => route === "admin", icon: "settings", label: "Admin" });
   return nav;
 };
 

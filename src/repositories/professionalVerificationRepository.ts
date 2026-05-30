@@ -86,6 +86,18 @@ const localVerifications = () => databaseClient.read<ProfessionalVerification[]>
 const saveLocalVerifications = (items: ProfessionalVerification[]) => databaseClient.write("professional_verifications", items);
 
 export const professionalVerificationRepository = {
+  async listReviewQueue() {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("professional_verifications")
+        .select("*")
+        .in("status", ["pending", "manual_review", "rejected", "verified", "auto_verified"])
+        .order("created_at", { ascending: false });
+      return error || !data ? [] : (data as ProfessionalVerificationRow[]).map(rowToVerification);
+    }
+
+    return localVerifications().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
   async startSignup(input: { fullName: string; userId: string }) {
     if (supabase) {
       const { data, error } = await supabase.rpc("start_professional_verification_signup", {
@@ -164,5 +176,39 @@ export const professionalVerificationRepository = {
     });
     if (error) return undefined;
     return path;
+  },
+  async createDocumentUrl(path: string) {
+    if (!supabase || !path) return undefined;
+    const { data, error } = await supabase.storage.from("professional-documents").createSignedUrl(path, 60 * 10);
+    return error ? undefined : data.signedUrl;
+  },
+  async decide(input: { approve: boolean; notes?: string; verificationId: string }): Promise<ProfessionalVerification | undefined> {
+    if (supabase) {
+      const { data, error } = await supabase.rpc("admin_decide_professional_verification", {
+        p_approve: input.approve,
+        p_notes: input.notes ?? null,
+        p_verification_id: input.verificationId,
+      });
+      if (error || !data) return undefined;
+      return rowToVerification(data as ProfessionalVerificationRow);
+    }
+
+    const now = new Date().toISOString();
+    const status: ProfessionalVerificationStatus = input.approve ? "verified" : "rejected";
+    const items = localVerifications();
+    const next = items.map((item) =>
+      item.id === input.verificationId
+        ? {
+            ...item,
+            reviewNotes: input.notes,
+            status,
+            updatedAt: now,
+            verifiedAt: input.approve ? now : item.verifiedAt,
+            rejectedAt: input.approve ? item.rejectedAt : now,
+          }
+        : item,
+    );
+    saveLocalVerifications(next);
+    return next.find((item) => item.id === input.verificationId);
   },
 };
